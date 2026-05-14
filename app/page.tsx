@@ -19,15 +19,16 @@ export default function Home() {
   };
 
   return (
-    // 1. Tambahkan overflow-x-auto di sini agar bisa di-scroll ke samping jika layar kecil
-    <main className="min-h-screen bg-[#f3f4ec] font-sans pb-10 overflow-x-auto">
+    // Menggunakan flex dan min-h-screen agar footer bisa selalu terdorong ke paling bawah
+    <main className="min-h-screen bg-[#f3f4ec] font-sans overflow-x-auto flex flex-col">
       
-      {/* 2. KUNCI LEBAR KANVAS: min-w-[1500px] akan memaksa desain tetap lebar seperti di zoom 80% */}
-      <div className="min-w-[1500px] mx-auto">
+      {/* KANVAS TETAP: Memastikan seluruh elemen dari Header sampai Footer sejajar */}
+      <div className="min-w-[1500px] mx-auto flex flex-col flex-1 w-full">
         
         <Header activeTab={activeTab} setActiveTab={handleTabChange} />
         
-        <div className="p-4 flex gap-4 mt-2">
+        {/* AREA KONTEN UTAMA */}
+        <div className="p-4 flex gap-4 mt-2 flex-1">
           <div className="flex-none">
             <KpiCards activeTab={activeTab} filterKec={filterKec} filterKel={filterKel} />
           </div>
@@ -54,6 +55,18 @@ export default function Home() {
             )}
           </div>
         </div>
+
+        {/* =========================================
+            FOOTER (ATRIBUT BAWAH)
+        ========================================= */}
+        <footer className="bg-[#1b75d8] text-white text-center py-4 mt-2 w-full shadow-inner">
+          <p className="font-extrabold text-[16px] tracking-wide uppercase">
+            Jefri Iswanto
+          </p>
+          <p className="font-bold text-[14px] tracking-wider uppercase mt-0.5">
+            Kepala BPJS Ketenagakerjaan Kantor Cabang Medan Kota
+          </p>
+        </footer>
 
       </div>
     </main>
