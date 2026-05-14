@@ -123,7 +123,8 @@ export default function KpiCards({
   });
 
   return (
-    <div className="flex flex-col gap-3 w-[360px] h-full">
+    // PERBAIKAN: Penambahan "relative z-50" agar seluruh kartu dan tooltip-nya berada di lapisan paling atas
+    <div className="flex flex-col gap-3 w-[360px] h-full relative z-50">
       <div className="flex gap-3 shrink-0">
         <div className="bg-[#42954f] text-white px-3 py-2 rounded-md shadow flex-1 transition-all">
           <p className="text-sm leading-tight">Jumlah<br/>Kecamatan</p>
@@ -181,13 +182,15 @@ export default function KpiCards({
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e0e0e0" />
               <XAxis type="number" tick={{fontSize: 9}} stroke="#666" />
               <YAxis type="category" dataKey="name" tick={{fontSize: 8}} stroke="#666" interval={0} width={160} />
-              {/* PERBAIKAN TOOLTIP */}
+              
               <Tooltip 
                 cursor={{fill: 'transparent'}} 
-                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
-                labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px'}}
+                wrapperStyle={{ zIndex: 100 }}
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', whiteSpace: 'normal', maxWidth: '250px'}}
+                labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word'}}
                 itemStyle={{color: '#455a64', fontWeight: '600'}}
               />
+              
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
               <Bar dataKey="TK AKTIF" fill="#1681db" barSize={8} radius={[0, 2, 2, 0]} />
               <Bar dataKey="TARGET" fill="#00bcd4" barSize={8} radius={[0, 2, 2, 0]} />
@@ -197,13 +200,15 @@ export default function KpiCards({
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
               <XAxis dataKey="name" tick={{fontSize: activeTab === 'KEC' ? 7.5 : 9}} angle={-45} textAnchor="end" interval={0} stroke="#666" />
               <YAxis tick={{fontSize: 10}} tickFormatter={(value) => value >= 1000 ? `${value / 1000} rb` : value} stroke="#666" />
-              {/* PERBAIKAN TOOLTIP */}
+              
               <Tooltip 
                 cursor={{fill: 'transparent'}} 
-                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
-                labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px'}}
+                wrapperStyle={{ zIndex: 100 }}
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', whiteSpace: 'normal', maxWidth: '250px'}}
+                labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word'}}
                 itemStyle={{color: '#455a64', fontWeight: '600'}}
               />
+              
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
               <Bar dataKey="TK AKTIF" fill="#1681db" barSize={12} radius={[2, 2, 0, 0]} />
               <Bar dataKey="TARGET" fill="#00bcd4" barSize={12} radius={[2, 2, 0, 0]} />
