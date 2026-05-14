@@ -15,26 +15,17 @@ export default function KecamatanTables() {
     loadData();
   }, []);
 
-  if (loading) {
-    return <div className="flex-1 flex justify-center items-center text-blue-500 font-bold">Memuat Data Kecamatan...</div>;
-  }
+  if (loading) return <div className="flex-1 flex justify-center items-center text-blue-500 font-bold">Memuat Data Kecamatan...</div>;
 
   const getVal = (row: Record<string, string>, targetKey: string) => {
-    if (!row) return '';
-    const foundKey = Object.keys(row).find(
-      (k) => k.trim().toLowerCase() === targetKey.toLowerCase()
-    );
+    const foundKey = Object.keys(row).find((k) => k.trim().toLowerCase() === targetKey.toLowerCase());
     return foundKey ? row[foundKey] : '';
   };
-
   const parsePercent = (val: string) => parseFloat((val || '0').replace(',', '.').replace('%', ''));
-  
-  // FUNGSI SAKTI WARNA: Mengubah persentase menjadi gradasi warna (0% = Merah, 25% = Oranye)
+
   const getDynamicBgColor = (val: string) => {
     const percent = parsePercent(val);
-    // Hue 0 = Merah, Hue 35 = Oranye. Kita memetakan rentang 0% - 25%.
     const hue = Math.max(0, Math.min((percent / 25) * 35, 35));
-    // Menggunakan format warna HSL (Hue, Saturation, Lightness)
     return `hsl(${hue}, 85%, 45%)`; 
   };
 
@@ -45,37 +36,72 @@ export default function KecamatanTables() {
   return (
     <div className="flex gap-4 flex-1 w-full h-full">
       
-      {/* BAGIAN KIRI: Tabel Utama Rekap Kecamatan */}
-      <div className="flex-[1.5] bg-[#f8faeb] p-4 rounded-xl shadow-sm border border-green-100">
-        <h2 className="font-bold text-lg text-black mb-3">Rekap Kecamatan</h2>
-        <div className="overflow-x-auto rounded-lg shadow-sm border border-blue-200">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-[#1b75d8] text-white font-bold">
+      {/* REKAP KECAMATAN - Diperkecil porsinya dari flex-[2.5] menjadi flex-[2] */}
+      <div className="flex-[2] flex flex-col gap-3 relative min-h-full">
+        <div className="absolute inset-0 bg-[#f8faeb] p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3">
+          <h2 className="font-bold text-[16px] text-black px-1 flex-none">Rekap Kecamatan</h2>
+          <div className="overflow-y-auto flex-1 bg-white rounded-lg border border-gray-200 shadow-inner">
+            <table className="w-full text-[12px] text-left">
+              <thead className="bg-[#1b75d8] text-white font-bold sticky top-0 shadow-sm z-10">
+                <tr>
+                  <th className="px-3 py-3 w-10 text-center">No.</th>
+                  <th className="px-3 py-3">Kecamatan</th>
+                  <th className="px-3 py-3 text-center">Jumlah<br/>Kelurahan</th>
+                  <th className="px-3 py-3 text-center">Jumlah<br/>Kepling</th>
+                  <th className="px-3 py-3 text-center">Target</th>
+                  <th className="px-3 py-3 text-center">TK Aktif</th>
+                  <th className="px-3 py-3 text-center">GAP</th>
+                  <th className="px-3 py-3 text-center">% ▼</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((row, index) => (
+                  <tr key={index} className="border-b even:bg-[#eef5e1] odd:bg-white hover:bg-blue-50 transition">
+                    <td className="px-3 py-2 text-center text-gray-900 font-bold">{index + 1}.</td>
+                    <td className="px-3 py-2 font-medium uppercase text-gray-800">{getVal(row, 'Kecamatan')}</td>
+                    <td className="px-3 py-2 text-center text-gray-600">{getVal(row, 'Jumlah Kelurahan')}</td>
+                    <td className="px-3 py-2 text-center text-gray-600">{getVal(row, 'Jumlah Kepling')}</td>
+                    <td className="px-3 py-2 text-center text-gray-600">{getVal(row, 'TARGET')}</td>
+                    <td className="px-3 py-2 text-center text-gray-600">{getVal(row, 'TK Aktif')}</td>
+                    <td className="px-3 py-2 text-center text-gray-600">{getVal(row, 'GAP')}</td>
+                    <td className="px-3 py-2 text-center font-bold text-white border-l border-white/20" style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}>
+                      {getVal(row, '%')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* TABEL TOP & WORST - Diperlebar dari 320px menjadi 380px */}
+      <div className="w-[380px] flex flex-col gap-4 shrink-0">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+          <div className="px-4 py-2 bg-white border-b border-gray-200">
+            <h2 className="font-bold text-[14px] text-black">Top 10 Kecamatan</h2>
+          </div>
+          <table className="w-full text-[10px] text-left">
+            <thead className="bg-[#388e3c] text-white font-bold">
               <tr>
-                <th className="px-3 py-3 w-10 text-center">No.</th>
-                <th className="px-3 py-3">Kecamatan</th>
-                <th className="px-3 py-3 text-center leading-tight">Jumlah<br/>Kelurahan</th>
-                <th className="px-3 py-3 text-center leading-tight">Jumlah<br/>Kepling</th>
-                <th className="px-3 py-3 text-center">Target</th>
-                <th className="px-3 py-3 text-center">TK Aktif</th>
-                <th className="px-3 py-3 text-center">GAP</th>
-                <th className="px-3 py-3 text-center">% ▼</th>
+                <th className="px-2 py-2 w-6 text-center">No.</th>
+                <th className="px-2 py-2">Kecamatan</th>
+                <th className="px-2 py-2 text-center">TARGET</th>
+                <th className="px-2 py-2 text-center leading-tight">TK<br/>AKTIF</th>
+                <th className="px-2 py-2 text-center">GAP</th>
+                <th className="px-2 py-2 text-center">% ▼</th>
               </tr>
             </thead>
             <tbody>
-              {data.map((row, index) => (
-                <tr key={index} className="border-b last:border-b-0 even:bg-[#eef5e1] odd:bg-white text-gray-800 hover:bg-blue-50 transition">
-                  <td className="px-3 py-2 text-center text-gray-500">{index + 1}.</td>
-                  <td className="px-3 py-2 uppercase font-medium">{getVal(row, 'Kecamatan')}</td>
-                  <td className="px-3 py-2 text-center">{getVal(row, 'Jumlah Kelurahan')}</td>
-                  <td className="px-3 py-2 text-center">{getVal(row, 'Jumlah Kepling')}</td>
-                  <td className="px-3 py-2 text-center">{getVal(row, 'TARGET')}</td>
-                  <td className="px-3 py-2 text-center">{getVal(row, 'TK Aktif')}</td>
-                  <td className="px-3 py-2 text-center">{getVal(row, 'GAP')}</td>
-                  <td 
-                    className="px-3 py-2 text-center font-semibold text-white" 
-                    style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}
-                  >
+              {top10Data.map((row, index) => (
+                <tr key={index} className="border-b even:bg-[#eef5e1] odd:bg-white hover:bg-green-50">
+                  <td className="px-2 py-2 text-center text-gray-900 font-bold">{index + 1}.</td>
+                  {/* PERBAIKAN: max-w dilonggarkan dari 80px menjadi 140px agar nama tidak terpotong */}
+                  <td className="px-2 py-2 font-bold uppercase text-gray-800 truncate max-w-[140px]">{getVal(row, 'Kecamatan')}</td>
+                  <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'TARGET')}</td>
+                  <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'TK Aktif')}</td>
+                  <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'GAP')}</td>
+                  <td className="px-2 py-2 text-center font-bold text-white" style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}>
                     {getVal(row, '%')}
                   </td>
                 </tr>
@@ -83,83 +109,39 @@ export default function KecamatanTables() {
             </tbody>
           </table>
         </div>
-      </div>
 
-      {/* BAGIAN KANAN: Top 10 & Worst 10 */}
-      <div className="flex-1 flex flex-col gap-6">
-        
-        {/* Top 10 Kecamatan */}
-        <div className="bg-[#f8faeb] p-4 rounded-xl shadow-sm border border-green-100">
-          <h2 className="font-bold text-lg text-black mb-3">Top 10 Kecamatan</h2>
-          <div className="overflow-hidden rounded-lg shadow-sm border border-green-700">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-[#3e8e41] text-white font-bold">
-                <tr>
-                  <th className="px-3 py-2 w-10 text-center">No.</th>
-                  <th className="px-3 py-2">Kecamatan</th>
-                  <th className="px-3 py-2 text-center">TARGET</th>
-                  <th className="px-3 py-2 text-center">TK AKTIF</th>
-                  <th className="px-3 py-2 text-center">GAP</th>
-                  <th className="px-3 py-2 text-center">% ▼</th>
-                </tr>
-              </thead>
-              <tbody>
-                {top10Data.map((row, index) => (
-                  <tr key={index} className="even:bg-[#fdfaeb] odd:bg-[#eef5e1] text-gray-800 border-b border-green-100/50 hover:bg-green-100 transition">
-                    <td className="px-3 py-1.5 text-center text-gray-500">{index + 1}.</td>
-                    <td className="px-3 py-1.5 uppercase font-medium">{getVal(row, 'Kecamatan')}</td>
-                    <td className="px-3 py-1.5 text-center">{getVal(row, 'TARGET')}</td>
-                    <td className="px-3 py-1.5 text-center">{getVal(row, 'TK Aktif')}</td>
-                    <td className="px-3 py-1.5 text-center">{getVal(row, 'GAP')}</td>
-                    <td 
-                      className="px-3 py-1.5 text-center font-semibold text-white"
-                      style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}
-                    >
-                      {getVal(row, '%')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+          <div className="px-4 py-2 bg-white border-b border-gray-200">
+            <h2 className="font-bold text-[14px] text-black">Worst 10 Kecamatan</h2>
           </div>
-        </div>
-
-        {/* Worst 10 Kecamatan */}
-        <div className="bg-[#f8faeb] p-4 rounded-xl shadow-sm border border-green-100">
-          <h2 className="font-bold text-lg text-black mb-3">Worst 10 Kecamatan</h2>
-          <div className="overflow-hidden rounded-lg shadow-sm border border-red-700">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-[#c82333] text-white font-bold">
-                <tr>
-                  <th className="px-3 py-2 w-10 text-center">No.</th>
-                  <th className="px-3 py-2">Kecamatan</th>
-                  <th className="px-3 py-2 text-center">Target</th>
-                  <th className="px-3 py-2 text-center">TK Aktif</th>
-                  <th className="px-3 py-2 text-center">GAP</th>
-                  <th className="px-3 py-2 text-center">% ▼</th>
+          <table className="w-full text-[10px] text-left">
+            <thead className="bg-[#b71c1c] text-white font-bold">
+              <tr>
+                <th className="px-2 py-2 w-6 text-center">No.</th>
+                <th className="px-2 py-2">Kecamatan</th>
+                <th className="px-2 py-2 text-center">Target</th>
+                <th className="px-2 py-2 text-center leading-tight">TK<br/>Aktif</th>
+                <th className="px-2 py-2 text-center">GAP</th>
+                <th className="px-2 py-2 text-center">% ▼</th>
+              </tr>
+            </thead>
+            <tbody>
+              {worst10Data.map((row, index) => (
+                <tr key={index} className="border-b even:bg-red-50 odd:bg-white hover:bg-red-100">
+                  <td className="px-2 py-2 text-center text-gray-900 font-bold">{index + 1}.</td>
+                  {/* PERBAIKAN: max-w dilonggarkan dari 80px menjadi 140px agar nama tidak terpotong */}
+                  <td className="px-2 py-2 font-bold uppercase text-gray-800 truncate max-w-[140px]">{getVal(row, 'Kecamatan')}</td>
+                  <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'TARGET')}</td>
+                  <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'TK Aktif')}</td>
+                  <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'GAP')}</td>
+                  <td className="px-2 py-2 text-center font-bold text-white" style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}>
+                    {getVal(row, '%')}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {worst10Data.map((row, index) => (
-                  <tr key={index} className="even:bg-[#fdfaeb] odd:bg-[#eef5e1] text-gray-800 border-b border-red-100/50 hover:bg-red-50 transition">
-                    <td className="px-3 py-1.5 text-center text-gray-500">{index + 1}.</td>
-                    <td className="px-3 py-1.5 uppercase font-medium">{getVal(row, 'Kecamatan')}</td>
-                    <td className="px-3 py-1.5 text-center">{getVal(row, 'TARGET')}</td>
-                    <td className="px-3 py-1.5 text-center">{getVal(row, 'TK Aktif')}</td>
-                    <td className="px-3 py-1.5 text-center">{getVal(row, 'GAP')}</td>
-                    <td 
-                      className="px-3 py-1.5 text-center font-semibold text-white"
-                      style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}
-                    >
-                      {getVal(row, '%')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
-
       </div>
     </div>
   );

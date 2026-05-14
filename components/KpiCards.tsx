@@ -105,22 +105,28 @@ export default function KpiCards({
 
   const barNameKey = isKep ? 'Kepala Lingkungan' : isKel ? 'Kelurahan' : 'Kecamatan';
   
-  const barData = [...filteredData]
-    .sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')))
-    .slice(0, 10)
-    .map(row => {
-      let nama = getVal(row, barNameKey);
-      
-      // PERBAIKAN: Batas karakter Kepling diperpanjang dari 25 menjadi 35
-      if(isKep && nama.length > 25) nama = nama.substring(0, 24) + '...';
-      else if(!isKep && nama.length > 12) nama = nama.substring(0, 11) + '...'; 
-      
-      return {
-        name: nama,
-        'TK AKTIF': parseNum(getVal(row, 'TK Aktif')),
-        'TARGET': parseNum(getVal(row, 'TARGET'))
-      };
-    });
+  // PENYORTIRAN BAR CHART
+  let barDataRaw = [...filteredData];
+  
+  if (activeTab === 'KEC') {
+    // Jika di tab Kecamatan, urutkan sesuai abjad (Relevan dengan tabel utama) dan tampilkan semuanya (21 data)
+    barDataRaw.sort((a, b) => getVal(a, 'Kecamatan').localeCompare(getVal(b, 'Kecamatan')));
+  } else {
+    // Jika di Kel/Kepling, ambil Top 10 persentase tertinggi
+    barDataRaw.sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
+    barDataRaw = barDataRaw.slice(0, 10);
+  }
+
+  const barData = barDataRaw.map(row => {
+    let nama = getVal(row, barNameKey);
+    if(isKep && nama.length > 35) nama = nama.substring(0, 34) + '...';
+    else if(!isKep && nama.length > 12) nama = nama.substring(0, 11) + '...'; 
+    return {
+      name: nama,
+      'TK AKTIF': parseNum(getVal(row, 'TK Aktif')),
+      'TARGET': parseNum(getVal(row, 'TARGET'))
+    };
+  });
 
   return (
     <div className="flex flex-col gap-3 w-[360px] h-full">
@@ -179,23 +185,21 @@ export default function KpiCards({
           {/* LOGIKA CONDITIONAL RENDERING UNTUK GRAFIK HORIZONTAL VS VERTIKAL */}
           {/* LOGIKA CONDITIONAL RENDERING UNTUK GRAFIK HORIZONTAL VS VERTIKAL */}
           {isKep ? (
-            // PERBAIKAN: Margin kiri disesuaikan
+            // ... (Kode BarChart layout="vertical" milik Kepling biarkan sama)
             <BarChart layout="vertical" data={barData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e0e0e0" />
               <XAxis type="number" tick={{fontSize: 9}} stroke="#666" />
-              
-               {/* PERBAIKAN UTAMA: width diperbesar menjadi 160 agar teks memiliki ruang yang luas */}
-              <YAxis type="category" dataKey="name" tick={{fontSize: 8}} stroke="#666" interval={0} width={130} />
-              
+              <YAxis type="category" dataKey="name" tick={{fontSize: 8}} stroke="#666" interval={0} width={160} />
               <Tooltip cursor={{fill: 'transparent'}} contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff'}} />
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
               <Bar dataKey="TK AKTIF" fill="#1681db" barSize={8} radius={[0, 2, 2, 0]} />
               <Bar dataKey="TARGET" fill="#00bcd4" barSize={8} radius={[0, 2, 2, 0]} />
             </BarChart>
           ) : (
-            <BarChart layout="horizontal" data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
+            // PERBAIKAN margin bottom diperbesar (45) dan font diperkecil (7.5) agar 21 kecamatan muat
+            <BarChart layout="horizontal" data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 45 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
-              <XAxis dataKey="name" tick={{fontSize: 9}} angle={-35} textAnchor="end" interval={0} stroke="#666" />
+              <XAxis dataKey="name" tick={{fontSize: activeTab === 'KEC' ? 7.5 : 9}} angle={-45} textAnchor="end" interval={0} stroke="#666" />
               <YAxis tick={{fontSize: 10}} tickFormatter={(value) => value >= 1000 ? `${value / 1000} rb` : value} stroke="#666" />
               <Tooltip cursor={{fill: 'transparent'}} contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff'}} />
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
