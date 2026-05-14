@@ -16,7 +16,6 @@ export default function KpiCards({
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      // Ambil dari sheet KEP jika tab KEPLING aktif
       const sheetToFetch = activeTab === 'KEPLING' ? 'KEP' : activeTab === 'KEL' ? 'KEL' : 'KEC';
       const result = (await fetchSheetData(sheetToFetch)) as Record<string, string>[];
       setData(result);
@@ -62,7 +61,6 @@ export default function KpiCards({
     return matchKec && matchKel;
   });
 
-  // LOGIKA HITUNGAN KPI YANG DINAMIS BERDASARKAN TAB
   const jmlKecamatan = isKep || isKel 
     ? new Set(filteredData.map(r => getVal(r, 'Kecamatan')).filter(Boolean)).size 
     : filteredData.length;
@@ -74,7 +72,7 @@ export default function KpiCards({
       : filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'Jumlah Kelurahan')), 0);
     
   const jmlKepling = isKep
-    ? filteredData.length // Tiap baris di sheet KEP adalah 1 Kepling
+    ? filteredData.length 
     : filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'Jumlah Kepling')), 0);
 
   const target = filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'TARGET')), 0);
@@ -105,14 +103,10 @@ export default function KpiCards({
 
   const barNameKey = isKep ? 'Kepala Lingkungan' : isKel ? 'Kelurahan' : 'Kecamatan';
   
-  // PENYORTIRAN BAR CHART
   let barDataRaw = [...filteredData];
-  
   if (activeTab === 'KEC') {
-    // Jika di tab Kecamatan, urutkan sesuai abjad (Relevan dengan tabel utama) dan tampilkan semuanya (21 data)
     barDataRaw.sort((a, b) => getVal(a, 'Kecamatan').localeCompare(getVal(b, 'Kecamatan')));
   } else {
-    // Jika di Kel/Kepling, ambil Top 10 persentase tertinggi
     barDataRaw.sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
     barDataRaw = barDataRaw.slice(0, 10);
   }
@@ -182,26 +176,34 @@ export default function KpiCards({
 
       <div className="bg-[#f8faeb] border border-blue-100 flex-1 min-h-[250px] rounded-md shadow mt-1 p-2">
          <ResponsiveContainer width="100%" height="100%">
-          {/* LOGIKA CONDITIONAL RENDERING UNTUK GRAFIK HORIZONTAL VS VERTIKAL */}
-          {/* LOGIKA CONDITIONAL RENDERING UNTUK GRAFIK HORIZONTAL VS VERTIKAL */}
           {isKep ? (
-            // ... (Kode BarChart layout="vertical" milik Kepling biarkan sama)
             <BarChart layout="vertical" data={barData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e0e0e0" />
               <XAxis type="number" tick={{fontSize: 9}} stroke="#666" />
               <YAxis type="category" dataKey="name" tick={{fontSize: 8}} stroke="#666" interval={0} width={160} />
-              <Tooltip cursor={{fill: 'transparent'}} contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff'}} />
+              {/* PERBAIKAN TOOLTIP */}
+              <Tooltip 
+                cursor={{fill: 'transparent'}} 
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
+                labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px'}}
+                itemStyle={{color: '#455a64', fontWeight: '600'}}
+              />
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
               <Bar dataKey="TK AKTIF" fill="#1681db" barSize={8} radius={[0, 2, 2, 0]} />
               <Bar dataKey="TARGET" fill="#00bcd4" barSize={8} radius={[0, 2, 2, 0]} />
             </BarChart>
           ) : (
-            // PERBAIKAN margin bottom diperbesar (45) dan font diperkecil (7.5) agar 21 kecamatan muat
             <BarChart layout="horizontal" data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 45 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
               <XAxis dataKey="name" tick={{fontSize: activeTab === 'KEC' ? 7.5 : 9}} angle={-45} textAnchor="end" interval={0} stroke="#666" />
               <YAxis tick={{fontSize: 10}} tickFormatter={(value) => value >= 1000 ? `${value / 1000} rb` : value} stroke="#666" />
-              <Tooltip cursor={{fill: 'transparent'}} contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff'}} />
+              {/* PERBAIKAN TOOLTIP */}
+              <Tooltip 
+                cursor={{fill: 'transparent'}} 
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
+                labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px'}}
+                itemStyle={{color: '#455a64', fontWeight: '600'}}
+              />
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
               <Bar dataKey="TK AKTIF" fill="#1681db" barSize={12} radius={[2, 2, 0, 0]} />
               <Bar dataKey="TARGET" fill="#00bcd4" barSize={12} radius={[2, 2, 0, 0]} />
