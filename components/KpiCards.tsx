@@ -112,18 +112,20 @@ export default function KpiCards({
   }
 
   const barData = barDataRaw.map(row => {
-    let nama = getVal(row, barNameKey);
+    let fullName = getVal(row, barNameKey); // Simpan nama aslinya
+    let nama = fullName;
     if(isKep && nama.length > 35) nama = nama.substring(0, 34) + '...';
     else if(!isKep && nama.length > 12) nama = nama.substring(0, 11) + '...'; 
+    
     return {
       name: nama,
+      fullName: fullName, // Kita kirim nama lengkap ke dalam data grafik
       'TK AKTIF': parseNum(getVal(row, 'TK Aktif')),
       'TARGET': parseNum(getVal(row, 'TARGET'))
     };
   });
 
   return (
-    // PERBAIKAN: Penambahan "relative z-50" agar seluruh kartu dan tooltip-nya berada di lapisan paling atas
     <div className="flex flex-col gap-3 w-[360px] h-full relative z-50">
       <div className="flex gap-3 shrink-0">
         <div className="bg-[#42954f] text-white px-3 py-2 rounded-md shadow flex-1 transition-all">
@@ -186,9 +188,16 @@ export default function KpiCards({
               <Tooltip 
                 cursor={{fill: 'transparent'}} 
                 wrapperStyle={{ zIndex: 100 }}
-                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', whiteSpace: 'normal', maxWidth: '250px'}}
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', whiteSpace: 'normal', maxWidth: '300px'}}
                 labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word'}}
                 itemStyle={{color: '#455a64', fontWeight: '600'}}
+                labelFormatter={(label, payload) => {
+                  // PERBAIKAN: Memaksa Tooltip mengambil 'fullName' jika ada
+                  if (payload && payload.length > 0 && payload[0].payload && payload[0].payload.fullName) {
+                    return payload[0].payload.fullName;
+                  }
+                  return label;
+                }}
               />
               
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
@@ -204,9 +213,16 @@ export default function KpiCards({
               <Tooltip 
                 cursor={{fill: 'transparent'}} 
                 wrapperStyle={{ zIndex: 100 }}
-                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', whiteSpace: 'normal', maxWidth: '250px'}}
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', whiteSpace: 'normal', maxWidth: '300px'}}
                 labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word'}}
                 itemStyle={{color: '#455a64', fontWeight: '600'}}
+                labelFormatter={(label, payload) => {
+                  // PERBAIKAN: Memaksa Tooltip mengambil 'fullName' jika ada
+                  if (payload && payload.length > 0 && payload[0].payload && payload[0].payload.fullName) {
+                    return payload[0].payload.fullName;
+                  }
+                  return label;
+                }}
               />
               
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
