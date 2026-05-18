@@ -84,8 +84,9 @@ export default function KpiCards({
   const formatNum = (num: number) => num.toLocaleString('id-ID');
   const formatPercent = (num: number) => num.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 
+  // PERBAIKAN: Mengubah TIDAK AKTIF menjadi BELUM AKTIF
   const pieData = [
-    { name: 'TIDAK AKTIF', value: Math.abs(sisaTarget) },
+    { name: 'BELUM AKTIF', value: Math.abs(sisaTarget) },
     { name: 'TK AKTIF', value: tkAktif }
   ];
   const PIE_COLORS = ['#e84545', '#4caf50'];
@@ -112,14 +113,14 @@ export default function KpiCards({
   }
 
   const barData = barDataRaw.map(row => {
-    let fullName = getVal(row, barNameKey); // Simpan nama aslinya
+    let fullName = getVal(row, barNameKey); 
     let nama = fullName;
     if(isKep && nama.length > 35) nama = nama.substring(0, 34) + '...';
     else if(!isKep && nama.length > 12) nama = nama.substring(0, 11) + '...'; 
     
     return {
       name: nama,
-      fullName: fullName, // Kita kirim nama lengkap ke dalam data grafik
+      fullName: fullName, 
       'TK AKTIF': parseNum(getVal(row, 'TK Aktif')),
       'TARGET': parseNum(getVal(row, 'TARGET'))
     };
@@ -160,6 +161,14 @@ export default function KpiCards({
               <Pie data={pieData} cx="50%" cy="50%" labelLine={false} label={renderCustomizedLabel} innerRadius={30} outerRadius={75} dataKey="value" stroke="none">
                 {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
               </Pie>
+              
+              {/* PERBAIKAN: Menambahkan Tooltip pada PieChart */}
+              <Tooltip 
+                formatter={(value: number) => formatNum(value)}
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
+                itemStyle={{color: '#455a64', fontWeight: '600'}}
+              />
+              
               <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
             </PieChart>
           </ResponsiveContainer>
@@ -192,7 +201,6 @@ export default function KpiCards({
                 labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word'}}
                 itemStyle={{color: '#455a64', fontWeight: '600'}}
                 labelFormatter={(label, payload) => {
-                  // PERBAIKAN: Memaksa Tooltip mengambil 'fullName' jika ada
                   if (payload && payload.length > 0 && payload[0].payload && payload[0].payload.fullName) {
                     return payload[0].payload.fullName;
                   }
@@ -217,7 +225,6 @@ export default function KpiCards({
                 labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word'}}
                 itemStyle={{color: '#455a64', fontWeight: '600'}}
                 labelFormatter={(label, payload) => {
-                  // PERBAIKAN: Memaksa Tooltip mengambil 'fullName' jika ada
                   if (payload && payload.length > 0 && payload[0].payload && payload[0].payload.fullName) {
                     return payload[0].payload.fullName;
                   }

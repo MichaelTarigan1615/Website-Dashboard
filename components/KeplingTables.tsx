@@ -247,20 +247,22 @@ export default function KeplingTables({
         
         {/* TABEL TOP 200 */}
         <div className="flex-1 absolute inset-y-0 left-0 w-[calc(50%-8px)] bg-[#f8faeb] rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-          <div className="px-4 py-3 bg-[#f8faeb] border-b border-gray-200 flex justify-between items-center">
+          {/* PERBAIKAN: Menambahkan h-[50px] agar tinggi header terkunci dan konsisten */}
+          <div className="px-4 py-3 bg-[#f8faeb] border-b border-gray-200 flex justify-between items-center h-[50px]">
             <h2 className="font-bold text-[15px] text-black">Top 200 Kepala Lingkungan</h2>
             <span className="text-[10px] text-gray-500 font-medium italic">Klik baris untuk lihat peserta</span>
           </div>
           <div className="overflow-y-auto flex-1 bg-white">
             <table className="w-full text-[11px] text-left">
-              <thead className="bg-[#388e3c] text-white font-bold sticky top-0 z-10 shadow-sm">
+              {/* PERBAIKAN: Menambahkan whitespace-nowrap agar teks header kolom tidak membentuk dua baris */}
+              <thead className="bg-[#388e3c] text-white font-bold sticky top-0 z-10 shadow-sm whitespace-nowrap">
                 <tr>
                   <th className="px-3 py-3 w-8 text-center">No.</th>
                   <th className="px-3 py-3">Kepala Lingkungan</th>
-                  <th className="px-3 py-3 text-center uppercase">Target</th>
+                  <th className="px-3 py-3 text-center uppercase">TARGET</th>
                   <th className="px-3 py-3 text-center uppercase">TK Aktif</th>
                   <th className="px-3 py-3 text-center uppercase">GAP</th>
-                  <th className="px-3 py-3 text-center">% ▼</th>
+                  <th className="px-3 py-3 text-center">%</th>
                 </tr>
               </thead>
               <tbody>
@@ -295,20 +297,22 @@ export default function KeplingTables({
 
         {/* TABEL WORST 200 */}
         <div className="flex-1 absolute inset-y-0 right-0 w-[calc(50%-8px)] bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-          <div className="px-4 py-3 bg-white border-b border-gray-200 flex justify-between items-center">
+          {/* PERBAIKAN: Menambahkan h-[50px] agar tinggi header terkunci dan konsisten */}
+          <div className="px-4 py-3 bg-white border-b border-gray-200 flex justify-between items-center h-[50px]">
             <h2 className="font-bold text-[15px] text-black">Worst 200 Kepala Lingkungan</h2>
             <span className="text-[10px] text-gray-500 font-medium italic">Klik baris untuk lihat peserta</span>
           </div>
           <div className="overflow-y-auto flex-1 bg-white">
             <table className="w-full text-[11px] text-left">
-              <thead className="bg-[#b71c1c] text-white font-bold sticky top-0 z-10 shadow-sm">
+              {/* PERBAIKAN: Menambahkan whitespace-nowrap agar teks header kolom tidak membentuk dua baris */}
+              <thead className="bg-[#b71c1c] text-white font-bold sticky top-0 z-10 shadow-sm whitespace-nowrap">
                 <tr>
                   <th className="px-3 py-3 w-8 text-center">No.</th>
                   <th className="px-3 py-3">Kepala Lingkungan</th>
-                  <th className="px-3 py-3 text-center uppercase">Target</th>
+                  <th className="px-3 py-3 text-center uppercase">TARGET</th>
                   <th className="px-3 py-3 text-center uppercase">TK Aktif</th>
                   <th className="px-3 py-3 text-center uppercase">GAP</th>
-                  <th className="px-3 py-3 text-center">% ▲</th>
+                  <th className="px-3 py-3 text-center">%</th>
                 </tr>
               </thead>
               <tbody>

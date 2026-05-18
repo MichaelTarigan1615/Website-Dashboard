@@ -48,10 +48,10 @@ export default function KecamatanTables() {
                   <th className="px-3 py-3">Kecamatan</th>
                   <th className="px-3 py-3 text-center">Jumlah<br/>Kelurahan</th>
                   <th className="px-3 py-3 text-center">Jumlah<br/>Kepling</th>
-                  <th className="px-3 py-3 text-center">Target</th>
-                  <th className="px-3 py-3 text-center">TK Aktif</th>
+                  <th className="px-3 py-3 text-center">TARGET</th>
+                  <th className="px-3 py-3 text-center">TK AKTIF</th>
                   <th className="px-3 py-3 text-center">GAP</th>
-                  <th className="px-3 py-3 text-center">% ▼</th>
+                  <th className="px-3 py-3 text-center">%</th>
                 </tr>
               </thead>
               <tbody>
@@ -89,7 +89,7 @@ export default function KecamatanTables() {
                 <th className="px-2 py-2 text-center">TARGET</th>
                 <th className="px-2 py-2 text-center leading-tight">TK<br/>AKTIF</th>
                 <th className="px-2 py-2 text-center">GAP</th>
-                <th className="px-2 py-2 text-center">% ▼</th>
+                <th className="px-2 py-2 text-center">%</th>
               </tr>
             </thead>
             <tbody>
@@ -119,10 +119,10 @@ export default function KecamatanTables() {
               <tr>
                 <th className="px-2 py-2 w-6 text-center">No.</th>
                 <th className="px-2 py-2">Kecamatan</th>
-                <th className="px-2 py-2 text-center">Target</th>
-                <th className="px-2 py-2 text-center leading-tight">TK<br/>Aktif</th>
+                <th className="px-2 py-2 text-center">TARGET</th>
+                <th className="px-2 py-2 text-center leading-tight">TK<br/>AKTIF</th>
                 <th className="px-2 py-2 text-center">GAP</th>
-                <th className="px-2 py-2 text-center">% ▼</th>
+                <th className="px-2 py-2 text-center">%</th>
               </tr>
             </thead>
             <tbody>

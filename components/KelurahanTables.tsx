@@ -206,10 +206,10 @@ export default function KelurahanTables({
                   <th className="px-3 py-3">Kecamatan</th>
                   <th className="px-3 py-3">Kelurahan</th>
                   <th className="px-2 py-3 text-center leading-tight">Jumlah<br/>Kepling</th>
-                  <th className="px-3 py-3 text-center">Target</th>
-                  <th className="px-3 py-3 text-center uppercase">TK Aktif</th>
+                  <th className="px-3 py-3 text-center">TARGET</th>
+                  <th className="px-3 py-3 text-center uppercase">TK AKTIF</th>
                   <th className="px-3 py-3 text-center uppercase">GAP</th>
-                  <th className="px-3 py-3 text-center">% ▼</th>
+                  <th className="px-3 py-3 text-center">%</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,10 +267,10 @@ export default function KelurahanTables({
                 <th className="px-2 py-2 w-6 text-center">No.</th>
                 <th className="px-2 py-2">Kecamatan</th>
                 <th className="px-2 py-2">Kelurahan</th>
-                <th className="px-2 py-2 text-center uppercase">Target</th>
-                <th className="px-2 py-2 text-center uppercase">TK Aktif</th>
+                <th className="px-2 py-2 text-center uppercase">TARGET</th>
+                <th className="px-2 py-2 text-center uppercase">TK AKTIF</th>
                 <th className="px-2 py-2 text-center uppercase">GAP</th>
-                <th className="px-2 py-2 text-center">% ▼</th>
+                <th className="px-2 py-2 text-center">%</th>
               </tr>
             </thead>
             <tbody>
@@ -278,7 +278,8 @@ export default function KelurahanTables({
                 <tr key={index} className="border-b border-gray-100 even:bg-[#eef5e1] odd:bg-white">
                    <td className="px-2 py-2 text-center text-gray-500">{index + 1}.</td>
                    <td className="px-2 py-2 uppercase font-bold text-gray-800">{getVal(row, 'Kecamatan')}</td>
-                   <td className="px-2 py-2 uppercase font-medium text-gray-700 truncate max-w-[100px]">{getVal(row, 'Kelurahan')}</td>
+                   {/* PERBAIKAN: Max-width diperbesar dari 100px menjadi 160px */}
+                   <td className="px-2 py-2 uppercase font-medium text-gray-700 truncate max-w-[160px]">{getVal(row, 'Kelurahan')}</td>
                    <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'TARGET')}</td>
                    <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'TK Aktif')}</td>
                    <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'GAP')}</td>
@@ -301,10 +302,10 @@ export default function KelurahanTables({
                 <th className="px-2 py-2 w-6 text-center">No.</th>
                 <th className="px-2 py-2">Kecamatan</th>
                 <th className="px-2 py-2">Kelurahan</th>
-                <th className="px-2 py-2 text-center uppercase">Target</th>
-                <th className="px-2 py-2 text-center uppercase">TK Aktif</th>
+                <th className="px-2 py-2 text-center uppercase">TARGET</th>
+                <th className="px-2 py-2 text-center uppercase">TK AKTIF</th>
                 <th className="px-2 py-2 text-center uppercase">GAP</th>
-                <th className="px-2 py-2 text-center">% ▲</th>
+                <th className="px-2 py-2 text-center">%</th>
               </tr>
             </thead>
             <tbody>
@@ -312,7 +313,8 @@ export default function KelurahanTables({
                  <tr key={index} className="border-b border-gray-100 even:bg-[#eef5e1] odd:bg-white hover:bg-red-50">
                     <td className="px-2 py-2 text-center text-gray-500">{index + 1}.</td>
                     <td className="px-2 py-2 uppercase font-bold text-gray-800">{getVal(row, 'Kecamatan')}</td>
-                    <td className="px-2 py-2 uppercase font-medium text-gray-700 truncate max-w-[100px]">{getVal(row, 'Kelurahan')}</td>
+                    {/* PERBAIKAN: Max-width diperbesar dari 100px menjadi 160px */}
+                    <td className="px-2 py-2 uppercase font-medium text-gray-700 truncate max-w-[160px]">{getVal(row, 'Kelurahan')}</td>
                     <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'TARGET')}</td>
                     <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'TK Aktif')}</td>
                     <td className="px-2 py-2 text-center text-gray-600">{getVal(row, 'GAP')}</td>
