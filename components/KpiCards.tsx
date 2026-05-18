@@ -164,7 +164,7 @@ export default function KpiCards({
               
               {/* PERBAIKAN: Menambahkan Tooltip pada PieChart */}
               <Tooltip 
-                formatter={(value: number) => formatNum(value)}
+                formatter={(value: any) => formatNum(Number(value) || 0)}
                 contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
                 itemStyle={{color: '#455a64', fontWeight: '600'}}
               />
