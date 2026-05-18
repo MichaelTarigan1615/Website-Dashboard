@@ -1,10 +1,15 @@
 @import "tailwindcss";
 
+/* 1. MANTRA AJAIB TAILWIND V4 (Diperbaiki: Menggunakan @variant, BUKAN @custom-variant) */
+@variant dark (&:where(.dark, .dark *));
+
+/* 2. Warna dasar (terang) */
 :root {
-  --background: #ffffff;
+  --background: #f3f4ec;
   --foreground: #171717;
 }
 
+/* 3. Pertahankan pengaturan Font bawaan Next.js */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -12,13 +17,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* 4. Aturan body dasar */
 body {
   background: var(--background);
   color: var(--foreground);

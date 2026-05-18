@@ -6,9 +6,10 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 export default function KpiCards({ 
   activeTab = 'KEC',
   filterKec = ['ALL'],
-  filterKel = ['ALL']
+  filterKel = ['ALL'],
+  isDarkMode = false // Menerima status mode gelap
 }: { 
-  activeTab?: string, filterKec?: string[], filterKel?: string[]
+  activeTab?: string, filterKec?: string[], filterKel?: string[], isDarkMode?: boolean
 }) {
   const [data, setData] = useState<Record<string, string>[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +33,7 @@ export default function KpiCards({
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-3 w-[360px] h-full items-center justify-center bg-white rounded-xl shadow text-blue-500 font-bold border border-gray-100 min-h-[600px]">
+      <div className="flex flex-col gap-3 w-[360px] h-full items-center justify-center bg-white dark:bg-slate-800 rounded-xl shadow text-blue-500 dark:text-blue-400 font-bold border border-gray-100 dark:border-slate-700 min-h-[600px] transition-colors">
         Memuat Indikator & Grafik...
       </div>
     );
@@ -54,14 +55,11 @@ export default function KpiCards({
     if (!isKel && !isKep) return true; 
     const kec = getVal(row, 'Kecamatan').toUpperCase();
     const kel = getVal(row, 'Kelurahan').toUpperCase();
-
     const matchKec = filterKec.includes('ALL') || filterKec.includes(kec);
     const matchKel = filterKel.includes('ALL') || filterKel.includes(kel);
-    
     return matchKec && matchKel;
   });
 
-  // LOGIKA HITUNGAN KPI YANG DINAMIS BERDASARKAN TAB (Sudah Diperbaiki untuk Nama Kelurahan yang Sama)
   const jmlKecamatan = isKep || isKel 
     ? new Set(filteredData.map(r => getVal(r, 'Kecamatan').trim().toUpperCase()).filter(Boolean)).size 
     : filteredData.length;
@@ -70,12 +68,9 @@ export default function KpiCards({
     ? new Set(filteredData.map(r => {
         const kec = getVal(r, 'Kecamatan').trim().toUpperCase();
         const kel = getVal(r, 'Kelurahan').trim().toUpperCase();
-        // Gabungkan Kecamatan dan Kelurahan agar menjadi ID unik yang berbeda
         return kec && kel ? `${kec}_${kel}` : null;
       }).filter(Boolean)).size
-    : isKel 
-      ? filteredData.length 
-      : filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'Jumlah Kelurahan')), 0);
+    : isKel ? filteredData.length : filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'Jumlah Kelurahan')), 0);
     
   const jmlKepling = isKep
     ? filteredData.length 
@@ -84,13 +79,11 @@ export default function KpiCards({
   const target = filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'TARGET')), 0);
   const tkAktif = filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'TK Aktif')), 0);
   const sisaTarget = filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'GAP')), 0);
-  
   const percentTkAktif = target > 0 ? (tkAktif / target) * 100 : 0;
 
   const formatNum = (num: number) => num.toLocaleString('id-ID');
   const formatPercent = (num: number) => num.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 
-  // PERBAIKAN: Mengubah TIDAK AKTIF menjadi BELUM AKTIF
   const pieData = [
     { name: 'BELUM AKTIF', value: Math.abs(sisaTarget) },
     { name: 'TK AKTIF', value: tkAktif }
@@ -123,7 +116,6 @@ export default function KpiCards({
     let nama = fullName;
     if(isKep && nama.length > 35) nama = nama.substring(0, 34) + '...';
     else if(!isKep && nama.length > 12) nama = nama.substring(0, 11) + '...'; 
-    
     return {
       name: nama,
       fullName: fullName, 
@@ -135,112 +127,103 @@ export default function KpiCards({
   return (
     <div className="flex flex-col gap-3 w-[360px] h-full relative z-50">
       <div className="flex gap-3 shrink-0">
-        <div className="bg-[#42954f] text-white px-3 py-2 rounded-md shadow flex-1 transition-all">
+        <div className="bg-[#42954f] dark:bg-green-700 text-white px-3 py-2 rounded-md shadow flex-1 transition-colors">
           <p className="text-sm leading-tight">Jumlah<br/>Kecamatan</p>
           <p className="text-4xl font-normal mt-1">{formatNum(jmlKecamatan)}</p>
         </div>
-        <div className="bg-[#42954f] text-white px-3 py-2 rounded-md shadow flex-1 transition-all">
+        <div className="bg-[#42954f] dark:bg-green-700 text-white px-3 py-2 rounded-md shadow flex-1 transition-colors">
           <p className="text-sm leading-tight">Jumlah<br/>Kelurahan</p>
           <p className="text-4xl font-normal mt-1">{formatNum(jmlKelurahan)}</p>
         </div>
-        <div className="bg-[#42954f] text-white px-3 py-2 rounded-md shadow flex-1 transition-all">
+        <div className="bg-[#42954f] dark:bg-green-700 text-white px-3 py-2 rounded-md shadow flex-1 transition-colors">
           <p className="text-sm leading-tight">Jumlah<br/>Kepling</p>
           <p className="text-4xl font-normal mt-1">{formatNum(jmlKepling)}</p>
         </div>
       </div>
 
       <div className="flex gap-3 shrink-0">
-        <div className="bg-[#1681db] text-white px-4 py-3 rounded-md shadow flex-1 flex flex-col justify-between min-h-[110px]">
+        <div className="bg-[#1681db] dark:bg-blue-800 text-white px-4 py-3 rounded-md shadow flex-1 flex flex-col justify-between min-h-[110px] transition-colors">
           <p className="text-sm leading-tight">Jumlah Target<br/>(50 x jumlah Kepling)</p>
           <p className="text-4xl font-normal mt-2 tracking-tight">{formatNum(target)}</p>
         </div>
-        <div className="bg-[#1681db] text-white px-4 py-3 rounded-md shadow flex-1 flex flex-col justify-between min-h-[110px]">
+        <div className="bg-[#1681db] dark:bg-blue-800 text-white px-4 py-3 rounded-md shadow flex-1 flex flex-col justify-between min-h-[110px] transition-colors">
           <p className="text-sm leading-tight">Jumlah TK Aktif</p>
           <p className="text-4xl font-normal mt-2 tracking-tight">{formatNum(tkAktif)}</p>
         </div>
       </div>
 
       <div className="flex gap-3 h-[200px] shrink-0">
-        <div className="bg-white border border-gray-100 rounded-md shadow flex-[1.5] flex flex-col items-center justify-center pt-2">
+        <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-md shadow flex-[1.5] flex flex-col items-center justify-center pt-2 transition-colors">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie data={pieData} cx="50%" cy="50%" labelLine={false} label={renderCustomizedLabel} innerRadius={30} outerRadius={75} dataKey="value" stroke="none">
                 {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
               </Pie>
-              
-              {/* PERBAIKAN: Menambahkan Tooltip pada PieChart */}
               <Tooltip 
                 formatter={(value: any) => formatNum(Number(value) || 0)}
-                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
-                itemStyle={{color: '#455a64', fontWeight: '600'}}
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '1px solid #334155' : '1px solid #e5e7eb', color: isDarkMode ? '#f8fafc' : '#000'}}
+                itemStyle={{color: isDarkMode ? '#cbd5e1' : '#455a64', fontWeight: '600'}}
               />
-              
-              <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+              <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ fontSize: '10px', color: isDarkMode ? '#cbd5e1' : '#333' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
         
         <div className="flex flex-col gap-3 flex-1">
-          <div className="bg-[#1681db] text-white px-4 py-2 rounded-md shadow flex-1 flex flex-col justify-center">
+          <div className="bg-[#1681db] dark:bg-blue-800 text-white px-4 py-2 rounded-md shadow flex-1 flex flex-col justify-center transition-colors">
             <p className="text-sm">Sisa Target</p>
             <p className="text-3xl font-normal mt-1">{formatNum(sisaTarget)}</p>
           </div>
-          <div className="bg-[#1681db] text-white px-4 py-2 rounded-md shadow flex-1 flex flex-col justify-center">
+          <div className="bg-[#1681db] dark:bg-blue-800 text-white px-4 py-2 rounded-md shadow flex-1 flex flex-col justify-center transition-colors">
             <p className="text-sm">% TK Aktif</p>
             <p className="text-3xl font-normal mt-1">{formatPercent(percentTkAktif)}</p>
           </div>
         </div>
       </div>
 
-      <div className="bg-[#f8faeb] border border-blue-100 flex-1 min-h-[250px] rounded-md shadow mt-1 p-2">
+      <div className="bg-[#f8faeb] dark:bg-slate-900 border border-blue-100 dark:border-slate-700 flex-1 min-h-[250px] rounded-md shadow mt-1 p-2 transition-colors">
          <ResponsiveContainer width="100%" height="100%">
           {isKep ? (
             <BarChart layout="vertical" data={barData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e0e0e0" />
-              <XAxis type="number" tick={{fontSize: 9}} stroke="#666" />
-              <YAxis type="category" dataKey="name" tick={{fontSize: 8}} stroke="#666" interval={0} width={160} />
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDarkMode ? "#334155" : "#e0e0e0"} />
+              <XAxis type="number" tick={{fontSize: 9, fill: isDarkMode ? "#cbd5e1" : "#666"}} stroke={isDarkMode ? "#cbd5e1" : "#666"} />
+              <YAxis type="category" dataKey="name" tick={{fontSize: 8, fill: isDarkMode ? "#cbd5e1" : "#666"}} stroke={isDarkMode ? "#cbd5e1" : "#666"} interval={0} width={160} />
               
               <Tooltip 
-                cursor={{fill: 'transparent'}} 
+                cursor={{fill: isDarkMode ? 'rgba(255,255,255,0.1)' : 'transparent'}} 
                 wrapperStyle={{ zIndex: 100 }}
-                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', whiteSpace: 'normal', maxWidth: '300px'}}
-                labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word'}}
-                itemStyle={{color: '#455a64', fontWeight: '600'}}
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '1px solid #334155' : '1px solid #e5e7eb', color: isDarkMode ? '#f8fafc' : '#37474f', maxWidth: '300px', whiteSpace: 'normal'}}
+                labelStyle={{fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word', color: isDarkMode ? '#fff' : '#37474f'}}
+                itemStyle={{fontWeight: '600'}}
                 labelFormatter={(label, payload) => {
-                  if (payload && payload.length > 0 && payload[0].payload && payload[0].payload.fullName) {
-                    return payload[0].payload.fullName;
-                  }
+                  if (payload && payload.length > 0 && payload[0].payload && payload[0].payload.fullName) return payload[0].payload.fullName;
                   return label;
                 }}
               />
-              
-              <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
-              <Bar dataKey="TK AKTIF" fill="#1681db" barSize={8} radius={[0, 2, 2, 0]} />
-              <Bar dataKey="TARGET" fill="#00bcd4" barSize={8} radius={[0, 2, 2, 0]} />
+              <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px', color: isDarkMode ? '#cbd5e1' : '#333' }} />
+              <Bar dataKey="TK AKTIF" fill={isDarkMode ? "#3b82f6" : "#1681db"} barSize={8} radius={[0, 2, 2, 0]} />
+              <Bar dataKey="TARGET" fill={isDarkMode ? "#06b6d4" : "#00bcd4"} barSize={8} radius={[0, 2, 2, 0]} />
             </BarChart>
           ) : (
             <BarChart layout="horizontal" data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 45 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
-              <XAxis dataKey="name" tick={{fontSize: activeTab === 'KEC' ? 7.5 : 9}} angle={-45} textAnchor="end" interval={0} stroke="#666" />
-              <YAxis tick={{fontSize: 10}} tickFormatter={(value) => value >= 1000 ? `${value / 1000} rb` : value} stroke="#666" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? "#334155" : "#e0e0e0"} />
+              <XAxis dataKey="name" tick={{fontSize: activeTab === 'KEC' ? 7.5 : 9, fill: isDarkMode ? "#cbd5e1" : "#666"}} angle={-45} textAnchor="end" interval={0} stroke={isDarkMode ? "#cbd5e1" : "#666"} />
+              <YAxis tick={{fontSize: 10, fill: isDarkMode ? "#cbd5e1" : "#666"}} tickFormatter={(value) => value >= 1000 ? `${value / 1000} rb` : value} stroke={isDarkMode ? "#cbd5e1" : "#666"} />
               
               <Tooltip 
-                cursor={{fill: 'transparent'}} 
+                cursor={{fill: isDarkMode ? 'rgba(255,255,255,0.1)' : 'transparent'}} 
                 wrapperStyle={{ zIndex: 100 }}
-                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', whiteSpace: 'normal', maxWidth: '300px'}}
-                labelStyle={{color: '#37474f', fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word'}}
-                itemStyle={{color: '#455a64', fontWeight: '600'}}
+                contentStyle={{fontSize: '12px', borderRadius: '8px', backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '1px solid #334155' : '1px solid #e5e7eb', color: isDarkMode ? '#f8fafc' : '#37474f', maxWidth: '300px', whiteSpace: 'normal'}}
+                labelStyle={{fontWeight: '900', marginBottom: '6px', wordWrap: 'break-word', color: isDarkMode ? '#fff' : '#37474f'}}
+                itemStyle={{fontWeight: '600'}}
                 labelFormatter={(label, payload) => {
-                  if (payload && payload.length > 0 && payload[0].payload && payload[0].payload.fullName) {
-                    return payload[0].payload.fullName;
-                  }
+                  if (payload && payload.length > 0 && payload[0].payload && payload[0].payload.fullName) return payload[0].payload.fullName;
                   return label;
                 }}
               />
-              
-              <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px' }} />
-              <Bar dataKey="TK AKTIF" fill="#1681db" barSize={12} radius={[2, 2, 0, 0]} />
-              <Bar dataKey="TARGET" fill="#00bcd4" barSize={12} radius={[2, 2, 0, 0]} />
+              <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px', color: isDarkMode ? '#cbd5e1' : '#333' }} />
+              <Bar dataKey="TK AKTIF" fill={isDarkMode ? "#3b82f6" : "#1681db"} barSize={12} radius={[2, 2, 0, 0]} />
+              <Bar dataKey="TARGET" fill={isDarkMode ? "#06b6d4" : "#00bcd4"} barSize={12} radius={[2, 2, 0, 0]} />
             </BarChart>
           )}
         </ResponsiveContainer>
