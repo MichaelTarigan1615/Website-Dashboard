@@ -61,12 +61,18 @@ export default function KpiCards({
     return matchKec && matchKel;
   });
 
+  // LOGIKA HITUNGAN KPI YANG DINAMIS BERDASARKAN TAB (Sudah Diperbaiki untuk Nama Kelurahan yang Sama)
   const jmlKecamatan = isKep || isKel 
-    ? new Set(filteredData.map(r => getVal(r, 'Kecamatan')).filter(Boolean)).size 
+    ? new Set(filteredData.map(r => getVal(r, 'Kecamatan').trim().toUpperCase()).filter(Boolean)).size 
     : filteredData.length;
     
   const jmlKelurahan = isKep
-    ? new Set(filteredData.map(r => getVal(r, 'Kelurahan')).filter(Boolean)).size
+    ? new Set(filteredData.map(r => {
+        const kec = getVal(r, 'Kecamatan').trim().toUpperCase();
+        const kel = getVal(r, 'Kelurahan').trim().toUpperCase();
+        // Gabungkan Kecamatan dan Kelurahan agar menjadi ID unik yang berbeda
+        return kec && kel ? `${kec}_${kel}` : null;
+      }).filter(Boolean)).size
     : isKel 
       ? filteredData.length 
       : filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'Jumlah Kelurahan')), 0);

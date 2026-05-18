@@ -1,10 +1,38 @@
 "use client";
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import { fetchSheetData } from '../utils/googleSheets'; // Pastikan path ini sesuai dengan struktur folder Anda
 
 const Header = ({ activeTab, setActiveTab }: { 
   activeTab: string, 
   setActiveTab: (tab: 'KEC' | 'KEL' | 'KEPLING') => void 
 }) => {
+  // State untuk menyimpan waktu update
+  const [lastUpdate, setLastUpdate] = useState<string>('Memuat waktu update...');
+
+  // Mengambil data dari sheet KEC saat Header dimuat
+  useEffect(() => {
+    async function fetchUpdateTime() {
+      try {
+        const data = (await fetchSheetData('KEC')) as Record<string, string>[];
+        if (data && data.length > 0) {
+          // Mencari kolom 'Waktu Update' di baris pertama (Sel N2)
+          const updateTime = data[0]['Waktu Update'];
+          
+          if (updateTime) {
+            setLastUpdate(`Update data per tgl. ${updateTime}`);
+          } else {
+            setLastUpdate('Update data per tgl. (Tambahkan header "Waktu Update" di sel N1)');
+          }
+        }
+      } catch (error) {
+        console.error("Gagal memuat waktu update:", error);
+        setLastUpdate('Gagal memuat waktu update');
+      }
+    }
+    fetchUpdateTime();
+  }, []);
+
   return (
     <div className="w-full shadow-sm">
       {/* HEADER UTAMA */}
@@ -15,23 +43,16 @@ const Header = ({ activeTab, setActiveTab }: {
           <Image src="/images/logo-bpjs.png" alt="Logo BPJS Watermark" width={650} height={200} className="object-contain" priority />
         </div>
 
-        {/* =========================================
-            LOGO DI UJUNG KIRI & KANAN (ABSOLUTE)
-        ========================================= */}
         {/* LOGO PEMKO (Ujung Kiri) */}
         <div className="absolute left-8 bottom-3 z-20">
           <Image src="/images/logo-pemko.png" alt="Logo Pemko" width={110} height={130} className="object-contain" priority />
         </div>
 
-        {/* LOGO BPJS (Ujung Kanan) - Diperbesar */}
-        <div className="absolute right-8 bottom-[-30] z-20">
+        {/* LOGO BPJS (Ujung Kanan) */}
+        <div className="absolute right-8 bottom-6 z-20">
           <Image src="/images/logo-bpjs.png" alt="Logo BPJS" width={240} height={80} className="object-contain" priority />
         </div>
 
-
-        {/* =========================================
-            KONTEN TENGAH (FOTO & JUDUL MERAPAT)
-        ========================================= */}
         {/* FOTO WALIKOTA & WAKIL (Kiri Tengah) */}
         <div className="flex items-end gap-2 z-10 shrink-0">
           <div className="flex flex-col items-center">
@@ -67,7 +88,12 @@ const Header = ({ activeTab, setActiveTab }: {
 
       {/* BAR BIRU NAVIGASI */}
       <div className="bg-[#1b75d8] text-white px-6 py-2.5 flex justify-between items-center relative border-t border-blue-400 z-30">
-        <div className="text-[13px] font-bold">Update data per tgl. 13 May 2026 21:14:03</div>
+        
+        {/* TEKS WAKTU UPDATE DINAMIS */}
+        <div className="text-[13px] font-bold">
+          {lastUpdate}
+        </div>
+        
         <div className="absolute left-1/2 -translate-x-1/2 flex gap-1">
           <button onClick={() => setActiveTab('KEC')} className={`${activeTab === 'KEC' ? "bg-white text-[#1b75d8] shadow-md" : "bg-[#0d47a1] text-white hover:bg-[#1565c0]"} px-8 xl:px-12 py-1.5 text-sm font-bold rounded-sm transition-all`}>Kecamatan</button>
           <button onClick={() => setActiveTab('KEL')} className={`${activeTab === 'KEL' ? "bg-white text-[#1b75d8] shadow-md" : "bg-[#0d47a1] text-white hover:bg-[#1565c0]"} px-8 xl:px-12 py-1.5 text-sm font-bold rounded-sm transition-all`}>Kelurahan</button>
