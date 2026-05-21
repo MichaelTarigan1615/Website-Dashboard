@@ -87,7 +87,7 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
 
 
 // =========================================================================
-// KOMPONEN UTAMA KEPLING DENGAN FITUR EXPANDABLE ROW
+// KOMPONEN UTAMA KEPLING DENGAN FITUR LAZY LOADING (LEVEL 1)
 // =========================================================================
 export default function KeplingTables({ 
   filterKec, setFilterKec, filterKel, setFilterKel 
@@ -97,19 +97,36 @@ export default function KeplingTables({
 }) {
   const [data, setData] = useState<Record<string, string>[]>([]);
   const [rekapData, setRekapData] = useState<Record<string, string>[]>([]); 
-  const [loading, setLoading] = useState(true);
+  
+  const [loading, setLoading] = useState(true); // Loading untuk tabel utama (KEP)
+  const [isRekapLoading, setIsRekapLoading] = useState(true); // Loading khusus di background (REKAP)
+  
   const [expandedKepling, setExpandedKepling] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
+      // 1. Tampilkan layar loading utama sebentar saja
       setLoading(true);
-      const [kepResult, rekapResult] = await Promise.all([
-        fetchSheetData('KEP'),
-        fetchSheetData('REKAP')
-      ]);
-      setData(kepResult as Record<string, string>[]);
-      setRekapData(rekapResult as Record<string, string>[]);
-      setLoading(false);
+      
+      // 2. Hanya tarik data KEP yang ringan, lalu langsung matikan loading utama!
+      try {
+        const kepResult = await fetchSheetData('KEP');
+        setData(kepResult as Record<string, string>[]);
+      } catch (error) {
+        console.error("Gagal memuat data KEP:", error);
+      }
+      setLoading(false); // Tabel langsung muncul di layar pengguna!
+
+      // 3. Tarik data REKAP (belasan ribu baris) secara diam-diam di latar belakang
+      setIsRekapLoading(true);
+      try {
+        const rekapResult = await fetchSheetData('REKAP');
+        setRekapData(rekapResult as Record<string, string>[]);
+      } catch (error) {
+        console.error("Gagal memuat data REKAP di background:", error);
+      } finally {
+        setIsRekapLoading(false); // Selesai ditarik di latar belakang
+      }
     }
     loadData();
   }, []);
@@ -117,8 +134,7 @@ export default function KeplingTables({
   if (loading) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center">
-        <div className="text-[#1b75d8] dark:text-blue-400 font-bold text-xl animate-pulse">Memuat Data Kepala Lingkungan & Peserta...</div>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Ini mungkin memakan waktu beberapa detik karena mengambil data Rekap yang besar.</p>
+        <div className="text-[#1b75d8] dark:text-blue-400 font-bold text-xl animate-pulse">Memuat Data Kepala Lingkungan...</div>
       </div>
     );
   }
@@ -183,9 +199,11 @@ export default function KeplingTables({
           <div className="bg-white dark:bg-slate-900 rounded-md border border-blue-300 dark:border-slate-600 shadow-sm overflow-hidden max-h-[300px] flex flex-col">
             <div className="px-3 py-2 bg-[#e3f2fd] dark:bg-slate-800 border-b border-blue-200 dark:border-slate-700 flex justify-between items-center">
               <span className="text-xs font-bold text-[#1565c0] dark:text-blue-300">Detail Peserta: {keplingName}</span>
-              <span className="text-xs font-semibold text-[#1565c0] dark:text-blue-300 bg-white dark:bg-slate-700 px-2 py-0.5 rounded-full border border-blue-200 dark:border-slate-600">
-                Total: {pesertaDetail.length}
-              </span>
+              {!isRekapLoading && (
+                <span className="text-xs font-semibold text-[#1565c0] dark:text-blue-300 bg-white dark:bg-slate-700 px-2 py-0.5 rounded-full border border-blue-200 dark:border-slate-600">
+                  Total: {pesertaDetail.length}
+                </span>
+              )}
             </div>
             <div className="overflow-y-auto flex-1">
               <table className="w-full text-[10px] text-left">
@@ -197,7 +215,13 @@ export default function KeplingTables({
                   </tr>
                 </thead>
                 <tbody>
-                  {pesertaDetail.length > 0 ? (
+                  {isRekapLoading ? (
+                    <tr>
+                      <td colSpan={3} className="px-3 py-8 text-center text-blue-600 dark:text-blue-400 font-medium animate-pulse">
+                        Sinkronisasi belasan ribu data peserta dari database... Mohon tunggu sebentar.
+                      </td>
+                    </tr>
+                  ) : pesertaDetail.length > 0 ? (
                     pesertaDetail.map((peserta, i) => (
                       <tr key={i} className="border-b border-gray-100 dark:border-slate-700/50 last:border-0 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                         <td className="px-3 py-1.5 text-center text-gray-500 dark:text-gray-400">{i + 1}.</td>

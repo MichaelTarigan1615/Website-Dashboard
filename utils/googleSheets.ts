@@ -1,24 +1,43 @@
-import Papa from 'papaparse';
+// Fungsi ini sekarang tidak lagi butuh PapaParse karena sudah dikerjakan oleh Server API
 
-// Ini adalah ID dari tautan Google Sheets Anda
-const SHEET_ID = '15JMEUKugjMYhmzm7mQEft80nMHkwLsg9NTjyXJ485Zw';
-
-// Fungsi untuk menarik data berdasarkan nama tab (KEC, KEL, KEP, atau REKAP)
 export const fetchSheetData = async (sheetName: string) => {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
+  // Tetap pertahankan LEVEL 2 (Session Storage) untuk perpindahan tab yang 0 detik!
+  const CACHE_KEY = `cache_data_${sheetName}`;
+  const CACHE_TIME_KEY = `cache_time_${sheetName}`;
+  const CACHE_DURATION = 5 * 60 * 1000; 
+
+  if (typeof window !== 'undefined') {
+    const cachedData = sessionStorage.getItem(CACHE_KEY);
+    const cacheTimestamp = sessionStorage.getItem(CACHE_TIME_KEY);
+
+    if (cachedData && cacheTimestamp) {
+      const now = new Date().getTime();
+      if (now - parseInt(cacheTimestamp) < CACHE_DURATION) {
+        return JSON.parse(cachedData);
+      }
+    }
+  }
+
+  console.log(`📥 Mengambil data dari API Internal Vercel untuk tab: ${sheetName}...`);
   
   try {
-    const response = await fetch(url, { cache: 'no-store' });
-    const csvText = await response.text();
+    // ⚡ MENGARAH KE API LOKAL (Bukan lagi ke docs.google.com)
+    // Ini memanggil file route.ts yang baru kita buat
+    const response = await fetch(`/api/sheets?tab=${sheetName}`);
+    
+    if (!response.ok) {
+      throw new Error('Gagal mengambil data dari API lokal');
+    }
 
-    // Memproses teks CSV secara langsung tanpa callback rumit
-    const results = Papa.parse(csvText, {
-      header: true,         // Membaca baris pertama sebagai nama kolom
-      skipEmptyLines: true, // Mengabaikan baris yang kosong
-    });
+    // Data yang datang sudah berbentuk JSON rapi, tidak perlu PapaParse lagi!
+    const parsedData = await response.json();
 
-    // Langsung mengembalikan hasil datanya
-    return results.data;
+    if (typeof window !== 'undefined' && parsedData && !parsedData.error) {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(parsedData));
+      sessionStorage.setItem(CACHE_TIME_KEY, new Date().getTime().toString());
+    }
+
+    return parsedData;
   } catch (error) {
     console.error(`Gagal mengambil data dari tab ${sheetName}:`, error);
     return [];
