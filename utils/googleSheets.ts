@@ -1,11 +1,13 @@
-// Fungsi ini sekarang tidak lagi butuh PapaParse karena sudah dikerjakan oleh Server API
+import Papa from 'papaparse';
+
+const SHEET_ID = '15JMEUKugjMYhmzm7mQEft80nMHkwLsg9NTjyXJ485Zw';
 
 export const fetchSheetData = async (sheetName: string) => {
-  // Tetap pertahankan LEVEL 2 (Session Storage) untuk perpindahan tab yang 0 detik!
   const CACHE_KEY = `cache_data_${sheetName}`;
   const CACHE_TIME_KEY = `cache_time_${sheetName}`;
   const CACHE_DURATION = 5 * 60 * 1000; 
 
+  // 1. CEK MEMORI BROWSER
   if (typeof window !== 'undefined') {
     const cachedData = sessionStorage.getItem(CACHE_KEY);
     const cacheTimestamp = sessionStorage.getItem(CACHE_TIME_KEY);
@@ -18,26 +20,45 @@ export const fetchSheetData = async (sheetName: string) => {
     }
   }
 
-  console.log(`📥 Mengambil data dari API Internal Vercel untuk tab: ${sheetName}...`);
-  
   try {
-    // ⚡ MENGARAH KE API LOKAL (Bukan lagi ke docs.google.com)
-    // Ini memanggil file route.ts yang baru kita buat
-    const response = await fetch(`/api/sheets?tab=${sheetName}`);
-    
-    if (!response.ok) {
-      throw new Error('Gagal mengambil data dari API lokal');
+    let parsedData;
+
+    // 2. LOGIKA HYBRID (Pemisahan Tugas)
+    if (sheetName === 'REKAP') {
+      // ⚡ BYPASS VERCEL: Browser mengunduh langsung dari Google untuk menghindari Limit 4,5 MB Vercel
+      console.log(`📥 Mengunduh REKAP langsung dari Google (Bypass Limit)...`);
+      
+      const cacheBuster = Math.floor(Date.now() / 60000);
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}&v=${cacheBuster}`;
+      
+      const response = await fetch(url, { cache: 'no-store' });
+      const csvText = await response.text();
+
+      // Laptop pengguna yang bertugas merapikan data ini
+      const results = Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+      });
+      parsedData = results.data;
+
+    } else {
+      // 🟢 Tab kecil (KEC, KEL, KEP) tetap menggunakan jalur Server Vercel yang super cepat
+      console.log(`📥 Mengambil data dari API Vercel untuk tab: ${sheetName}...`);
+      
+      const response = await fetch(`/api/sheets?tab=${sheetName}`);
+      if (!response.ok) throw new Error('Gagal mengambil data dari API lokal');
+      parsedData = await response.json();
     }
 
-    // Data yang datang sudah berbentuk JSON rapi, tidak perlu PapaParse lagi!
-    const parsedData = await response.json();
-
-    if (typeof window !== 'undefined' && parsedData && !parsedData.error) {
+    // 3. SIMPAN KE MEMORI
+    // Pastikan data tidak kosong sebelum menyimpannya ke memori
+    if (typeof window !== 'undefined' && parsedData && parsedData.length > 0) {
       sessionStorage.setItem(CACHE_KEY, JSON.stringify(parsedData));
       sessionStorage.setItem(CACHE_TIME_KEY, new Date().getTime().toString());
     }
 
     return parsedData;
+
   } catch (error) {
     console.error(`Gagal mengambil data dari tab ${sheetName}:`, error);
     return [];
