@@ -191,7 +191,10 @@ export default function KeplingTables({
   const renderDetailPeserta = (keplingName: string) => {
     if (expandedKepling !== keplingName) return null;
 
-    const pesertaDetail = rekapData.filter(r => getVal(r, 'Wilayah').toUpperCase() === keplingName.toUpperCase());
+    // Ubah bagian ini agar menggunakan .trim() pada kedua sisi perbandingan
+  const pesertaDetail = rekapData.filter(
+    r => getVal(r, 'Wilayah').trim().toUpperCase() === keplingName.trim().toUpperCase()
+    );
 
     return (
       <tr className="bg-blue-50 dark:bg-slate-800/80 shadow-inner">
