@@ -2,9 +2,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { fetchSheetData } from '../utils/googleSheets';
 
-// =========================================================================
-// KOMPONEN KUSTOM DROPDOWN
-// =========================================================================
 const DataStudioDropdown = ({ title, options, selected, onChange }: {
   title: string;
   options: { label: string, metric: number }[];
@@ -85,10 +82,6 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
   );
 };
 
-
-// =========================================================================
-// KOMPONEN UTAMA KEPLING DENGAN FITUR LAZY LOADING (LEVEL 1)
-// =========================================================================
 export default function KeplingTables({ 
   filterKec, setFilterKec, filterKel, setFilterKel 
 }: { 
@@ -98,37 +91,39 @@ export default function KeplingTables({
   const [data, setData] = useState<Record<string, string>[]>([]);
   const [rekapData, setRekapData] = useState<Record<string, string>[]>([]); 
   
-  const [loading, setLoading] = useState(true); // Loading untuk tabel utama (KEP)
-  const [isRekapLoading, setIsRekapLoading] = useState(true); // Loading khusus di background (REKAP)
+  const [loading, setLoading] = useState(true); 
+  const [isRekapLoading, setIsRekapLoading] = useState(true); 
   
   const [expandedKepling, setExpandedKepling] = useState<string | null>(null);
 
+  // ⚡ PERUBAHAN: Listener Refresh Data (Bisa refresh 2 tabel sekaligus!)
   useEffect(() => {
-    async function loadData() {
-      // 1. Tampilkan layar loading utama sebentar saja
-      setLoading(true);
+    async function loadData(force = false) {
+      if (force) setLoading(true);
       
-      // 2. Hanya tarik data KEP yang ringan, lalu langsung matikan loading utama!
       try {
-        const kepResult = await fetchSheetData('KEP');
+        const kepResult = await fetchSheetData('KEP', force);
         setData(kepResult as Record<string, string>[]);
       } catch (error) {
         console.error("Gagal memuat data KEP:", error);
       }
-      setLoading(false); // Tabel langsung muncul di layar pengguna!
+      setLoading(false); 
 
-      // 3. Tarik data REKAP (belasan ribu baris) secara diam-diam di latar belakang
       setIsRekapLoading(true);
       try {
-        const rekapResult = await fetchSheetData('REKAP');
+        const rekapResult = await fetchSheetData('REKAP', force);
         setRekapData(rekapResult as Record<string, string>[]);
       } catch (error) {
-        console.error("Gagal memuat data REKAP di background:", error);
+        console.error("Gagal memuat data REKAP:", error);
       } finally {
-        setIsRekapLoading(false); // Selesai ditarik di latar belakang
+        setIsRekapLoading(false); 
       }
     }
     loadData();
+
+    const handleRefresh = () => loadData(true);
+    window.addEventListener('forceRefreshData', handleRefresh);
+    return () => window.removeEventListener('forceRefreshData', handleRefresh);
   }, []);
 
   if (loading) {
@@ -191,7 +186,6 @@ export default function KeplingTables({
   const renderDetailPeserta = (keplingName: string) => {
     if (expandedKepling !== keplingName) return null;
 
-    // Ubah bagian ini agar menggunakan .trim() pada kedua sisi perbandingan
   const pesertaDetail = rekapData.filter(
     r => getVal(r, 'Wilayah').trim().toUpperCase() === keplingName.trim().toUpperCase()
     );

@@ -92,7 +92,7 @@ const Header = ({
       </header>
 
       <div className={`text-white px-6 py-2.5 flex justify-between items-center relative border-t z-30 transition-colors duration-300 ${isDarkMode ? 'bg-[#0f172a] border-slate-700' : 'bg-[#1b75d8] border-blue-400'}`}>
-        <div className="text-[13px] font-bold">{lastUpdate}</div>
+        <div className="text-[13px] font-bold flex-1">{lastUpdate}</div>
         
         <div className="absolute left-1/2 -translate-x-1/2 flex gap-1">
           <button onClick={() => setActiveTab('KEC')} className={`px-8 xl:px-12 py-1.5 text-sm font-bold rounded-sm transition-all ${activeTab === 'KEC' ? (isDarkMode ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-[#1b75d8] shadow-md') : (isDarkMode ? 'bg-slate-900 text-gray-400 hover:bg-slate-700' : 'bg-[#0d47a1] text-white hover:bg-[#1565c0]')}`}>Kecamatan</button>
@@ -100,8 +100,25 @@ const Header = ({
           <button onClick={() => setActiveTab('KEPLING')} className={`px-8 xl:px-12 py-1.5 text-sm font-bold rounded-sm transition-all ${activeTab === 'KEPLING' ? (isDarkMode ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-[#1b75d8] shadow-md') : (isDarkMode ? 'bg-slate-900 text-gray-400 hover:bg-slate-700' : 'bg-[#0d47a1] text-white hover:bg-[#1565c0]')}`}>Kepala Lingkungan</button>
         </div>
         
-        <div className="w-[200px] flex justify-end">
-          <button onClick={toggleDarkMode} className={`flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold border shadow-inner transition-all ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-600' : 'bg-[#0d47a1] hover:bg-[#1565c0] text-white border-blue-400/30'}`}>
+        {/* WADAH TOMBOL KANAN */}
+        <div className="flex justify-end gap-2 flex-1 shrink-0">
+          {/* TOMBOL SEGARKAN DATA */}
+          <button 
+            onClick={() => window.dispatchEvent(new Event('forceRefreshData'))}
+            className={`flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold border shadow-inner transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-600' : 'bg-[#0d47a1] hover:bg-[#1565c0] text-white border-blue-400/30'}`}
+            title="Tarik data terbaru dari server tanpa reload halaman"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span className="mt-0.5">Segarkan Data</span>
+          </button>
+
+          {/* TOMBOL MODE GELAP/TERANG */}
+          <button 
+            onClick={toggleDarkMode} 
+            className={`flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold border shadow-inner transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-600' : 'bg-[#0d47a1] hover:bg-[#1565c0] text-white border-blue-400/30'}`}
+          >
             {isDarkMode ? (<>☀️ <span className="mt-0.5">Mode Terang</span></>) : (<>🌙 <span className="mt-0.5">Mode Gelap</span></>)}
           </button>
         </div>

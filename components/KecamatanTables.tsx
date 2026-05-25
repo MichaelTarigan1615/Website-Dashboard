@@ -3,7 +3,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { fetchSheetData } from '../utils/googleSheets';
 
 export default function KecamatanTables() {
-  // 1. SEMUA HOOKS HARUS DI ATAS
   const [data, setData] = useState<Record<string, string>[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' }>({
@@ -11,16 +10,22 @@ export default function KecamatanTables() {
     direction: 'asc',
   });
 
+  // ⚡ PERUBAHAN: Listener Refresh Data
   useEffect(() => {
-    async function loadData() {
-      const result = (await fetchSheetData('KEC')) as Record<string, string>[];
+    async function loadData(force = false) {
+      if (force) setLoading(true); // Munculkan layar loading jika direfresh paksa
+      const result = (await fetchSheetData('KEC', force)) as Record<string, string>[];
       setData(result);
       setLoading(false);
     }
     loadData();
+
+    // Pasang telinga untuk mendengar klik tombol refresh
+    const handleRefresh = () => loadData(true);
+    window.addEventListener('forceRefreshData', handleRefresh);
+    return () => window.removeEventListener('forceRefreshData', handleRefresh);
   }, []);
 
-  // 2. FUNGSI PEMBANTU (HELPERS)
   const getVal = (row: Record<string, string>, targetKey: string) => {
     const foundKey = Object.keys(row).find((k) => k.trim().toLowerCase() === targetKey.toLowerCase());
     return foundKey ? row[foundKey] : '';
@@ -39,7 +44,6 @@ export default function KecamatanTables() {
     setSortConfig({ key, direction });
   };
 
-  // 3. HOOK TERAKHIR (useMemo) HARUS DIPANGGIL SEBELUM EARLY RETURN
   const sortedTableData = useMemo(() => {
     let sortableItems = [...data]; 
     if (sortConfig.key !== null) {
@@ -72,12 +76,8 @@ export default function KecamatanTables() {
     return sortableItems;
   }, [data, sortConfig]);
 
-  // =========================================================================
-  // 4. EARLY RETURN (LOADING) - AMAN DILETAKKAN DI SINI!
-  // =========================================================================
   if (loading) return <div className="flex-1 flex justify-center items-center text-blue-500 dark:text-blue-400 font-bold">Memuat Data Kecamatan...</div>;
 
-  // 5. PROSES NON-HOOK UNTUK TABEL KANAN
   const getSortIcon = (key: string) => {
     if (sortConfig.key !== key) return <span className="text-white/30 opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-[10px]">↕</span>;
     return sortConfig.direction === 'asc' ? <span className="text-white ml-1 text-[10px]">▲</span> : <span className="text-white ml-1 text-[10px]">▼</span>;
@@ -87,7 +87,6 @@ export default function KecamatanTables() {
   const top10Data = sortedDataDesc.slice(0, 10);
   const worst10Data = [...sortedDataDesc].reverse().slice(0, 10);
 
-  // 6. RENDER HTML UTAMA
   return (
     <div className="flex gap-4 flex-1 w-full h-full">
       {/* REKAP KECAMATAN */}

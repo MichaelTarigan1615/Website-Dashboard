@@ -2,9 +2,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { fetchSheetData } from '../utils/googleSheets';
 
-// =========================================================================
-// KOMPONEN KUSTOM DROPDOWN (SUDAH DIKEMBALIKAN)
-// =========================================================================
 const DataStudioDropdown = ({ title, options, selected, onChange }: {
   title: string;
   options: { label: string, metric: number }[];
@@ -103,17 +100,12 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
   );
 };
 
-
-// =========================================================================
-// KOMPONEN UTAMA TABEL KELURAHAN (URUTAN HOOKS DIPERBAIKI)
-// =========================================================================
 export default function KelurahanTables({ 
   filterKec, setFilterKec, filterKel, setFilterKel 
 }: { 
   filterKec: string[], setFilterKec: (v: string[]) => void,
   filterKel: string[], setFilterKel: (v: string[]) => void
 }) {
-  // 1. SEMUA HOOKS HARUS DI ATAS
   const [data, setData] = useState<Record<string, string>[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' }>({
@@ -121,16 +113,21 @@ export default function KelurahanTables({
     direction: 'asc',
   });
 
+  // ⚡ PERUBAHAN: Listener Refresh Data
   useEffect(() => {
-    async function loadData() {
-      const result = (await fetchSheetData('KEL')) as Record<string, string>[];
+    async function loadData(force = false) {
+      if (force) setLoading(true);
+      const result = (await fetchSheetData('KEL', force)) as Record<string, string>[];
       setData(result);
       setLoading(false);
     }
     loadData();
+
+    const handleRefresh = () => loadData(true);
+    window.addEventListener('forceRefreshData', handleRefresh);
+    return () => window.removeEventListener('forceRefreshData', handleRefresh);
   }, []);
 
-  // 2. FUNGSI PEMBANTU (HELPERS)
   const getVal = (row: Record<string, string>, targetKey: string) => {
     const foundKey = Object.keys(row).find((k) => k.trim().toLowerCase() === targetKey.toLowerCase());
     return foundKey ? row[foundKey] : '';
@@ -160,7 +157,6 @@ export default function KelurahanTables({
     setSortConfig({ key, direction });
   };
 
-  // 3. HOOK TERAKHIR (useMemo) SEBELUM EARLY RETURN
   const displayData = useMemo(() => {
     let sortableItems = [...filteredData];
     if (sortConfig.key !== null) {
@@ -195,9 +191,6 @@ export default function KelurahanTables({
     return sortableItems;
   }, [filteredData, sortConfig]);
 
-  // =========================================================================
-  // 4. EARLY RETURN (LOADING) - AMAN DILETAKKAN DI SINI!
-  // =========================================================================
   if (loading) {
     return (
       <div className="w-full h-[500px] flex items-center justify-center">
@@ -206,7 +199,6 @@ export default function KelurahanTables({
     );
   }
 
-  // 5. PROSES NON-HOOK (Baru dieksekusi setelah loading selesai agar lebih ringan)
   const getSortIcon = (key: string) => {
     if (sortConfig.key !== key) return <span className="text-white/30 opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-[10px]">↕</span>;
     return sortConfig.direction === 'asc' ? <span className="text-white ml-1 text-[10px]">▲</span> : <span className="text-white ml-1 text-[10px]">▼</span>;
@@ -235,7 +227,6 @@ export default function KelurahanTables({
   const top10Data = sortedDataDesc.slice(0, 10);
   const worst10Data = sortedDataAsc.slice(0, 10);
 
-  // 6. RENDER HTML UTAMA
   return (
     <div className="flex gap-4 w-full">
       <div className="flex-[1.5] relative min-h-full">
