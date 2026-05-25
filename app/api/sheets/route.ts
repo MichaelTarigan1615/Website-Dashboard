@@ -8,14 +8,27 @@ const SHEET_ID = '15JMEUKugjMYhmzm7mQEft80nMHkwLsg9NTjyXJ485Zw';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const sheetName = searchParams.get('tab') || 'KEC';
+  
+  // 1. TANGKAP SINYAL REFRESH DARI TOMBOL (Dari googleSheets.ts)
+  const clientTimestamp = searchParams.get('t'); 
 
-  const cacheBuster = Math.floor(Date.now() / 60000);
+  // 2. LOGIKA CACHE PINTAR
+  // Jika tombol Segarkan ditekan (ada clientTimestamp), gunakan waktu saat ini juga agar 100% bypass cache.
+  // Jika tidak (memuat normal), bulatkan ke 1 menit untuk menghemat kuota Vercel.
+  const cacheBuster = clientTimestamp ? clientTimestamp : Math.floor(Date.now() / 60000);
+
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}&v=${cacheBuster}`;
 
   try {
-    const response = await fetch(url, {
-      next: { revalidate: 60 }
-    });
+    // 3. MATIKAN CACHE INTERNAL NEXT.JS SAAT REFRESH
+    let fetchOptions: RequestInit = {};
+    if (clientTimestamp) {
+      fetchOptions = { cache: 'no-store' }; // Paksa tarik baru dari Google!
+    } else {
+      fetchOptions = { next: { revalidate: 60 } }; // Simpan cache 60 detik
+    }
+
+    const response = await fetch(url, fetchOptions);
 
     if (!response.ok) throw new Error('Gagal mengambil data dari Google Sheets');
 
@@ -25,8 +38,7 @@ export async function GET(request: Request) {
       skipEmptyLines: true,
     });
 
-    // ⚡ SUPER OPTIMASI: Jika yang diminta tab REKAP, pangkas kolomnya di server!
-    // Hanya kirim 3 kolom penting. Ukuran menyusut dari 10MB+ menjadi ~1MB (Lolos limit Vercel)
+    // 4. PEMANGKASAN KOLOM UNTUK TAB REKAP (Lolos Limit 4,5MB Vercel)
     if (sheetName === 'REKAP') {
       const minimizedData = results.data.map((row: any) => {
         const getValLocal = (r: any, target: string) => {
@@ -42,7 +54,7 @@ export async function GET(request: Request) {
       return NextResponse.json(minimizedData);
     }
 
-    // Untuk tab ringan (KEC, KEL, KEP) kirim utuh seperti biasa
+    // Untuk tab KEC, KEL, KEP
     return NextResponse.json(results.data);
   } catch (error) {
     console.error(`Error API Server untuk tab ${sheetName}:`, error);
