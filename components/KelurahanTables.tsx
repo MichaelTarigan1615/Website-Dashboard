@@ -113,10 +113,10 @@ export default function KelurahanTables({
     direction: 'asc',
   });
 
-  // ⚡ PERUBAHAN: Listener Refresh Data
   useEffect(() => {
     async function loadData(force = false) {
       if (force) setLoading(true);
+      // HANYA mengambil data KEL
       const result = (await fetchSheetData('KEL', force)) as Record<string, string>[];
       setData(result);
       setLoading(false);
@@ -357,7 +357,6 @@ export default function KelurahanTables({
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );

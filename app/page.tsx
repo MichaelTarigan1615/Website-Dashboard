@@ -11,10 +11,17 @@ export default function Home() {
   const [filterKec, setFilterKec] = useState<string[]>(['ALL']);
   const [filterKel, setFilterKel] = useState<string[]>(['ALL']);
 
+  // ⚡ TRICK UTAMA: Mencatat tab mana saja yang sudah pernah dibuka oleh pengguna
+  // Di awal, kita hanya mengizinkan tab KEC yang aktif dimuat untuk menghemat load awal.
+  const [mountedTabs, setMountedTabs] = useState<Record<string, boolean>>({
+    KEC: true,
+    KEL: false,
+    KEPLING: false
+  });
+
   // PUSAT KENDALI MODE GELAP
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // EFEK PENYELAMAT: Ini memaksa browser memasang atau mencabut class 'dark' secara absolut di akar HTML
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -22,6 +29,13 @@ export default function Home() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  // Aktifkan pencatatan trigger ketika activeTab berubah
+  useEffect(() => {
+    if (!mountedTabs[activeTab]) {
+      setMountedTabs(prev => ({ ...prev, [activeTab]: true }));
+    }
+  }, [activeTab, mountedTabs]);
 
   const handleTabChange = (tab: 'KEC' | 'KEL' | 'KEPLING') => {
     setActiveTab(tab);
@@ -45,10 +59,27 @@ export default function Home() {
             <KpiCards activeTab={activeTab} filterKec={filterKec} filterKel={filterKel} isDarkMode={isDarkMode} />
           </div>
           
-          <div className="flex-1 flex min-w-0">
-            {activeTab === 'KEC' && <KecamatanTables />}
-            {activeTab === 'KEL' && <KelurahanTables filterKec={filterKec} setFilterKec={setFilterKec} filterKel={filterKel} setFilterKel={setFilterKel} />}
-            {activeTab === 'KEPLING' && <KeplingTables filterKec={filterKec} setFilterKec={setFilterKec} filterKel={filterKel} setFilterKel={setFilterKel} />}
+          <div className="flex-1 flex min-w-0 relative">
+            {/* 🟢 TAB REKAP KECAMATAN */}
+            {mountedTabs.KEC && (
+              <div className={`flex-1 flex min-w-0 ${activeTab === 'KEC' ? '' : 'hidden'}`}>
+                <KecamatanTables />
+              </div>
+            )}
+
+            {/* 🟢 TAB REKAP KELURAHAN */}
+            {mountedTabs.KEL && (
+              <div className={`flex-1 flex min-w-0 ${activeTab === 'KEL' ? '' : 'hidden'}`}>
+                <KelurahanTables filterKec={filterKec} setFilterKec={setFilterKec} filterKel={filterKel} setFilterKel={setFilterKel} />
+              </div>
+            )}
+
+            {/* 🟢 TAB KEPALA LINGKUNGAN */}
+            {mountedTabs.KEPLING && (
+              <div className={`flex-1 flex min-w-0 ${activeTab === 'KEPLING' ? '' : 'hidden'}`}>
+                <KeplingTables filterKec={filterKec} setFilterKec={setFilterKec} filterKel={filterKel} setFilterKel={setFilterKel} />
+              </div>
+            )}
           </div>
         </div>
 

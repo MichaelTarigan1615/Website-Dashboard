@@ -96,28 +96,35 @@ export default function KeplingTables({
   
   const [expandedKepling, setExpandedKepling] = useState<string | null>(null);
 
-  // ⚡ PERUBAHAN: Listener Refresh Data (Bisa refresh 2 tabel sekaligus!)
   useEffect(() => {
     async function loadData(force = false) {
-      if (force) setLoading(true);
+      if (force) {
+        setLoading(true);
+        setIsRekapLoading(true);
+      }
       
+      // Langkah 1: Segera ambil data KEP yang super ringan agar tabel langsung muncul
       try {
         const kepResult = await fetchSheetData('KEP', force);
         setData(kepResult as Record<string, string>[]);
       } catch (error) {
         console.error("Gagal memuat data KEP:", error);
       }
-      setLoading(false); 
+      setLoading(false); // <--- TABEL UTAMA KEPALA LINGKUNGAN LANGSUNG RENDER DI SINI!
 
-      setIsRekapLoading(true);
-      try {
-        const rekapResult = await fetchSheetData('REKAP', force);
-        setRekapData(rekapResult as Record<string, string>[]);
-      } catch (error) {
-        console.error("Gagal memuat data REKAP:", error);
-      } finally {
-        setIsRekapLoading(false); 
-      }
+      // Langkah 2: ⚡ OPTIMASI UTAMA
+      // Memberikan jeda 400ms agar browser selesai menggambar tabel KEP seutuhnya,
+      // baru setelah selesai, script menyedot data REKAP secara senyap di belakang layar.
+      setTimeout(async () => {
+        try {
+          const rekapResult = await fetchSheetData('REKAP', force);
+          setRekapData(rekapResult as Record<string, string>[]);
+        } catch (error) {
+          console.error("Gagal memuat data REKAP:", error);
+        } finally {
+          setIsRekapLoading(false);
+        }
+      }, 400);
     }
     loadData();
 
@@ -186,8 +193,8 @@ export default function KeplingTables({
   const renderDetailPeserta = (keplingName: string) => {
     if (expandedKepling !== keplingName) return null;
 
-  const pesertaDetail = rekapData.filter(
-    r => getVal(r, 'Wilayah').trim().toUpperCase() === keplingName.trim().toUpperCase()
+    const pesertaDetail = rekapData.filter(
+      r => getVal(r, 'Wilayah').trim().toUpperCase() === keplingName.trim().toUpperCase()
     );
 
     return (
@@ -250,7 +257,6 @@ export default function KeplingTables({
       </div>
 
       <div className="flex gap-4 flex-1 relative min-h-[500px]">
-        
         {/* TABEL TOP 200 */}
         <div className="flex-1 absolute inset-y-0 left-0 w-[calc(50%-8px)] bg-[#f8faeb] dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
           <div className="px-4 py-3 bg-[#f8faeb] dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center h-[50px]">
@@ -346,7 +352,6 @@ export default function KeplingTables({
             </table>
           </div>
         </div>
-
       </div>
     </div>
   );

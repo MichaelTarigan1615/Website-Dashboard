@@ -7,22 +7,37 @@ export default function KpiCards({
   activeTab = 'KEC',
   filterKec = ['ALL'],
   filterKel = ['ALL'],
-  isDarkMode = false // Menerima status mode gelap
+  isDarkMode = false
 }: { 
   activeTab?: string, filterKec?: string[], filterKel?: string[], isDarkMode?: boolean
 }) {
   const [data, setData] = useState<Record<string, string>[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ⚡ PERUBAHAN: Logika Loading Anti-Kedip & Listener Refresh
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
+    async function loadData(force = false) {
+      // Hanya munculkan layar loading JIKA ditarik paksa ATAU data sebelumnya masih kosong
+      if (force || data.length === 0) {
+        setLoading(true);
+      }
+      
       const sheetToFetch = activeTab === 'KEPLING' ? 'KEP' : activeTab === 'KEL' ? 'KEL' : 'KEC';
-      const result = (await fetchSheetData(sheetToFetch)) as Record<string, string>[];
+      const result = (await fetchSheetData(sheetToFetch, force)) as Record<string, string>[];
       setData(result);
+      
       setLoading(false);
     }
+    
+    // Muat saat tab berubah
     loadData();
+
+    // Pasang telinga untuk mendengar tombol "Segarkan Data"
+    const handleRefresh = () => loadData(true);
+    window.addEventListener('forceRefreshData', handleRefresh);
+    
+    return () => window.removeEventListener('forceRefreshData', handleRefresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]); 
 
   const getVal = (row: Record<string, string>, targetKey: string) => {

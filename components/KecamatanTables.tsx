@@ -10,17 +10,16 @@ export default function KecamatanTables() {
     direction: 'asc',
   });
 
-  // ⚡ PERUBAHAN: Listener Refresh Data
   useEffect(() => {
     async function loadData(force = false) {
-      if (force) setLoading(true); // Munculkan layar loading jika direfresh paksa
+      if (force) setLoading(true);
+      // HANYA mengambil data KEC
       const result = (await fetchSheetData('KEC', force)) as Record<string, string>[];
       setData(result);
       setLoading(false);
     }
     loadData();
 
-    // Pasang telinga untuk mendengar klik tombol refresh
     const handleRefresh = () => loadData(true);
     window.addEventListener('forceRefreshData', handleRefresh);
     return () => window.removeEventListener('forceRefreshData', handleRefresh);
@@ -89,7 +88,6 @@ export default function KecamatanTables() {
 
   return (
     <div className="flex gap-4 flex-1 w-full h-full">
-      {/* REKAP KECAMATAN */}
       <div className="flex-[2] flex flex-col gap-3 relative min-h-full">
         <div className="absolute inset-0 bg-[#f8faeb] dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col gap-3 transition-colors">
           <h2 className="font-bold text-[16px] text-black dark:text-white px-1 flex-none">Rekap Kecamatan</h2>
