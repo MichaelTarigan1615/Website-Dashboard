@@ -21,7 +21,7 @@ const Header = ({
       try {
         const data = (await fetchSheetData('KEC')) as Record<string, string>[];
         if (data && data.length > 0) {
-          const updateTime = data[0]['Waktu Update'];
+          const updateTime = data[0]['Update per'];
           if (updateTime) setLastUpdate(`Update data per tgl. ${updateTime}`);
           else setLastUpdate('Update data per tgl. (Tambahkan header "Waktu Update" di sel N1)');
         }
