@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { fetchSheetData } from '../utils/googleSheets';
 
 // =========================================================================
-// KOMPONEN KUSTOM DROPDOWN
+// KOMPONEN KUSTOM DROPDOWN (SUDAH DIKEMBALIKAN)
 // =========================================================================
 const DataStudioDropdown = ({ title, options, selected, onChange }: {
   title: string;
@@ -105,7 +105,7 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
 
 
 // =========================================================================
-// KOMPONEN UTAMA TABEL KELURAHAN
+// KOMPONEN UTAMA TABEL KELURAHAN (URUTAN HOOKS DIPERBAIKI)
 // =========================================================================
 export default function KelurahanTables({ 
   filterKec, setFilterKec, filterKel, setFilterKel 
@@ -113,8 +113,13 @@ export default function KelurahanTables({
   filterKec: string[], setFilterKec: (v: string[]) => void,
   filterKel: string[], setFilterKel: (v: string[]) => void
 }) {
+  // 1. SEMUA HOOKS HARUS DI ATAS
   const [data, setData] = useState<Record<string, string>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' }>({
+    key: null,
+    direction: 'asc',
+  });
 
   useEffect(() => {
     async function loadData() {
@@ -125,14 +130,7 @@ export default function KelurahanTables({
     loadData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="w-full h-[500px] flex items-center justify-center">
-        <div className="text-[#1b75d8] dark:text-blue-400 font-bold text-xl animate-pulse">Memuat Data Kelurahan...</div>
-      </div>
-    );
-  }
-
+  // 2. FUNGSI PEMBANTU (HELPERS)
   const getVal = (row: Record<string, string>, targetKey: string) => {
     const foundKey = Object.keys(row).find((k) => k.trim().toLowerCase() === targetKey.toLowerCase());
     return foundKey ? row[foundKey] : '';
@@ -148,6 +146,70 @@ export default function KelurahanTables({
     const percent = parsePercent(val);
     const hue = Math.max(0, Math.min((percent / 40) * 35, 35)); 
     return `hsl(${hue}, 85%, 45%)`; 
+  };
+
+  const filteredData = data.filter(row => {
+    const matchKec = filterKec.includes('ALL') || filterKec.includes(getVal(row, 'Kecamatan').toUpperCase());
+    const matchKel = filterKel.includes('ALL') || filterKel.includes(getVal(row, 'Kelurahan').toUpperCase());
+    return matchKec && matchKel;
+  });
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+    setSortConfig({ key, direction });
+  };
+
+  // 3. HOOK TERAKHIR (useMemo) SEBELUM EARLY RETURN
+  const displayData = useMemo(() => {
+    let sortableItems = [...filteredData];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        const valA = getVal(a, sortConfig.key!);
+        const valB = getVal(b, sortConfig.key!);
+
+        const cleanValue = (val: any) => {
+          if (!val) return 0;
+          const strVal = String(val);
+          const cleanStr = strVal.replace(/\./g, '').replace(/,/g, '.').replace('%', '');
+          const num = parseFloat(cleanStr);
+          return isNaN(num) ? strVal : num;
+        };
+
+        const cleanedA = cleanValue(valA);
+        const cleanedB = cleanValue(valB);
+
+        if (typeof cleanedA === 'number' && typeof cleanedB === 'number') {
+          return sortConfig.direction === 'asc' ? cleanedA - cleanedB : cleanedB - cleanedA;
+        }
+
+        const strA = String(valA).toLowerCase();
+        const strB = String(valB).toLowerCase();
+        if (strA < strB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (strA > strB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else {
+      sortableItems.sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
+    }
+    return sortableItems;
+  }, [filteredData, sortConfig]);
+
+  // =========================================================================
+  // 4. EARLY RETURN (LOADING) - AMAN DILETAKKAN DI SINI!
+  // =========================================================================
+  if (loading) {
+    return (
+      <div className="w-full h-[500px] flex items-center justify-center">
+        <div className="text-[#1b75d8] dark:text-blue-400 font-bold text-xl animate-pulse">Memuat Data Kelurahan...</div>
+      </div>
+    );
+  }
+
+  // 5. PROSES NON-HOOK (Baru dieksekusi setelah loading selesai agar lebih ringan)
+  const getSortIcon = (key: string) => {
+    if (sortConfig.key !== key) return <span className="text-white/30 opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-[10px]">↕</span>;
+    return sortConfig.direction === 'asc' ? <span className="text-white ml-1 text-[10px]">▲</span> : <span className="text-white ml-1 text-[10px]">▼</span>;
   };
 
   const kecOptionsMap = new Map();
@@ -167,18 +229,13 @@ export default function KelurahanTables({
   });
   const kelOptions = Array.from(kelOptionsMap.entries()).map(([label, metric]) => ({label, metric})).sort((a,b) => b.metric - a.metric);
 
-  const filteredData = data.filter(row => {
-    const matchKec = filterKec.includes('ALL') || filterKec.includes(getVal(row, 'Kecamatan').toUpperCase());
-    const matchKel = filterKel.includes('ALL') || filterKel.includes(getVal(row, 'Kelurahan').toUpperCase());
-    return matchKec && matchKel;
-  });
-
   const sortedDataDesc = [...filteredData].sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
   const sortedDataAsc = [...filteredData].sort((a, b) => parsePercent(getVal(a, '%')) - parsePercent(getVal(b, '%')));
 
   const top10Data = sortedDataDesc.slice(0, 10);
   const worst10Data = sortedDataAsc.slice(0, 10);
 
+  // 6. RENDER HTML UTAMA
   return (
     <div className="flex gap-4 w-full">
       <div className="flex-[1.5] relative min-h-full">
@@ -188,18 +245,32 @@ export default function KelurahanTables({
             <table className="w-full text-[11px] text-left">
               <thead className="bg-[#1b75d8] text-white font-bold sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th className="px-3 py-3 w-8 text-center">No.</th>
-                  <th className="px-3 py-3">Kecamatan</th>
-                  <th className="px-3 py-3">Kelurahan</th>
-                  <th className="px-2 py-3 text-center leading-tight">Jumlah<br/>Kepling</th>
-                  <th className="px-3 py-3 text-center">TARGET</th>
-                  <th className="px-3 py-3 text-center uppercase">TK AKTIF</th>
-                  <th className="px-3 py-3 text-center uppercase">GAP</th>
-                  <th className="px-3 py-3 text-center">%</th>
+                  <th className="px-3 py-3 w-8 text-center border-r border-blue-600/30">No.</th>
+                  <th onClick={() => handleSort('Kecamatan')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center">Kecamatan {getSortIcon('Kecamatan')}</div>
+                  </th>
+                  <th onClick={() => handleSort('Kelurahan')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center">Kelurahan {getSortIcon('Kelurahan')}</div>
+                  </th>
+                  <th onClick={() => handleSort('Jumlah Kepling')} className="px-2 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center justify-center text-center leading-tight">Jumlah<br/>Kepling {getSortIcon('Jumlah Kepling')}</div>
+                  </th>
+                  <th onClick={() => handleSort('TARGET')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center justify-center text-center">TARGET {getSortIcon('TARGET')}</div>
+                  </th>
+                  <th onClick={() => handleSort('TK Aktif')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center justify-center text-center uppercase">TK AKTIF {getSortIcon('TK Aktif')}</div>
+                  </th>
+                  <th onClick={() => handleSort('GAP')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center justify-center text-center uppercase">GAP {getSortIcon('GAP')}</div>
+                  </th>
+                  <th onClick={() => handleSort('%')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none">
+                    <div className="flex items-center justify-center text-center">% {getSortIcon('%')}</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {sortedDataDesc.map((row, index) => (
+                {displayData.map((row, index) => (
                   <tr key={index} className="border-b border-gray-100 dark:border-slate-700/50 even:bg-[#eef5e1] dark:even:bg-slate-800/80 odd:bg-white dark:odd:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
                     <td className="px-3 py-2 text-center text-gray-500 dark:text-gray-400">{index + 1}.</td>
                     <td className="px-3 py-2 uppercase font-bold text-gray-800 dark:text-gray-100">{getVal(row, 'Kecamatan')}</td>
@@ -213,7 +284,7 @@ export default function KelurahanTables({
                     </td>
                   </tr>
                 ))}
-                {sortedDataDesc.length === 0 && (
+                {displayData.length === 0 && (
                   <tr><td colSpan={8} className="text-center py-10 text-gray-400 dark:text-gray-500 font-bold">Data tidak ditemukan</td></tr>
                 )}
               </tbody>

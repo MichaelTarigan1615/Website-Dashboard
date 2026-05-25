@@ -1,10 +1,15 @@
 "use client";
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { fetchSheetData } from '../utils/googleSheets';
 
 export default function KecamatanTables() {
+  // 1. SEMUA HOOKS HARUS DI ATAS
   const [data, setData] = useState<Record<string, string>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' }>({
+    key: null,
+    direction: 'asc',
+  });
 
   useEffect(() => {
     async function loadData() {
@@ -15,8 +20,7 @@ export default function KecamatanTables() {
     loadData();
   }, []);
 
-  if (loading) return <div className="flex-1 flex justify-center items-center text-blue-500 dark:text-blue-400 font-bold">Memuat Data Kecamatan...</div>;
-
+  // 2. FUNGSI PEMBANTU (HELPERS)
   const getVal = (row: Record<string, string>, targetKey: string) => {
     const foundKey = Object.keys(row).find((k) => k.trim().toLowerCase() === targetKey.toLowerCase());
     return foundKey ? row[foundKey] : '';
@@ -29,13 +33,63 @@ export default function KecamatanTables() {
     return `hsl(${hue}, 85%, 45%)`; 
   };
 
-  const sortedData = [...data].sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
-  const top10Data = sortedData.slice(0, 10);
-  const worst10Data = [...sortedData].reverse().slice(0, 10);
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+    setSortConfig({ key, direction });
+  };
 
+  // 3. HOOK TERAKHIR (useMemo) HARUS DIPANGGIL SEBELUM EARLY RETURN
+  const sortedTableData = useMemo(() => {
+    let sortableItems = [...data]; 
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        const valA = getVal(a, sortConfig.key!);
+        const valB = getVal(b, sortConfig.key!);
+
+        const cleanValue = (val: any) => {
+          if (!val) return 0;
+          const strVal = String(val);
+          const cleanStr = strVal.replace(/\./g, '').replace(/,/g, '.').replace('%', '');
+          const num = parseFloat(cleanStr);
+          return isNaN(num) ? strVal : num; 
+        };
+
+        const cleanedA = cleanValue(valA);
+        const cleanedB = cleanValue(valB);
+
+        if (typeof cleanedA === 'number' && typeof cleanedB === 'number') {
+          return sortConfig.direction === 'asc' ? cleanedA - cleanedB : cleanedB - cleanedA;
+        }
+
+        const strA = String(valA).toLowerCase();
+        const strB = String(valB).toLowerCase();
+        if (strA < strB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (strA > strB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [data, sortConfig]);
+
+  // =========================================================================
+  // 4. EARLY RETURN (LOADING) - AMAN DILETAKKAN DI SINI!
+  // =========================================================================
+  if (loading) return <div className="flex-1 flex justify-center items-center text-blue-500 dark:text-blue-400 font-bold">Memuat Data Kecamatan...</div>;
+
+  // 5. PROSES NON-HOOK UNTUK TABEL KANAN
+  const getSortIcon = (key: string) => {
+    if (sortConfig.key !== key) return <span className="text-white/30 opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-[10px]">↕</span>;
+    return sortConfig.direction === 'asc' ? <span className="text-white ml-1 text-[10px]">▲</span> : <span className="text-white ml-1 text-[10px]">▼</span>;
+  };
+
+  const sortedDataDesc = [...data].sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
+  const top10Data = sortedDataDesc.slice(0, 10);
+  const worst10Data = [...sortedDataDesc].reverse().slice(0, 10);
+
+  // 6. RENDER HTML UTAMA
   return (
     <div className="flex gap-4 flex-1 w-full h-full">
-      
       {/* REKAP KECAMATAN */}
       <div className="flex-[2] flex flex-col gap-3 relative min-h-full">
         <div className="absolute inset-0 bg-[#f8faeb] dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col gap-3 transition-colors">
@@ -44,18 +98,32 @@ export default function KecamatanTables() {
             <table className="w-full text-[12px] text-left">
               <thead className="bg-[#1b75d8] text-white font-bold sticky top-0 shadow-sm z-10">
                 <tr>
-                  <th className="px-3 py-3 w-10 text-center">No.</th>
-                  <th className="px-3 py-3">Kecamatan</th>
-                  <th className="px-3 py-3 text-center">Jumlah<br/>Kelurahan</th>
-                  <th className="px-3 py-3 text-center">Jumlah<br/>Kepling</th>
-                  <th className="px-3 py-3 text-center">TARGET</th>
-                  <th className="px-3 py-3 text-center">TK AKTIF</th>
-                  <th className="px-3 py-3 text-center">GAP</th>
-                  <th className="px-3 py-3 text-center">%</th>
+                  <th className="px-3 py-3 w-10 text-center border-r border-blue-600/30">No.</th>
+                  <th onClick={() => handleSort('Kecamatan')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center">Kecamatan {getSortIcon('Kecamatan')}</div>
+                  </th>
+                  <th onClick={() => handleSort('Jumlah Kelurahan')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center justify-center text-center">Jumlah<br/>Kelurahan {getSortIcon('Jumlah Kelurahan')}</div>
+                  </th>
+                  <th onClick={() => handleSort('Jumlah Kepling')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center justify-center text-center">Jumlah<br/>Kepling {getSortIcon('Jumlah Kepling')}</div>
+                  </th>
+                  <th onClick={() => handleSort('TARGET')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center justify-center text-center">TARGET {getSortIcon('TARGET')}</div>
+                  </th>
+                  <th onClick={() => handleSort('TK Aktif')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center justify-center text-center">TK AKTIF {getSortIcon('TK Aktif')}</div>
+                  </th>
+                  <th onClick={() => handleSort('GAP')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                    <div className="flex items-center justify-center text-center">GAP {getSortIcon('GAP')}</div>
+                  </th>
+                  <th onClick={() => handleSort('%')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none">
+                    <div className="flex items-center justify-center text-center">% {getSortIcon('%')}</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {data.map((row, index) => (
+                {sortedTableData.map((row, index) => (
                   <tr key={index} className="border-b border-gray-100 dark:border-slate-700/50 even:bg-[#eef5e1] dark:even:bg-slate-800/80 odd:bg-white dark:odd:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
                     <td className="px-3 py-2 text-center text-gray-900 dark:text-gray-400 font-bold">{index + 1}.</td>
                     <td className="px-3 py-2 font-medium uppercase text-gray-800 dark:text-gray-100">{getVal(row, 'Kecamatan')}</td>
