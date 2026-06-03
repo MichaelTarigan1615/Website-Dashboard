@@ -1,34 +1,70 @@
 "use client";
-import React, { useEffect, useState, useMemo } from 'react';
-import { fetchSheetData } from '../utils/googleSheets';
+import React, { useState, useMemo } from 'react';
 
-export default function KecamatanTables() {
-  const [data, setData] = useState<Record<string, string>[]>([]);
-  const [loading, setLoading] = useState(true);
+// Menerima data real-time yang sudah diparsing dari page.tsx
+export default function KecamatanTables({ data = [] }: { data?: any[] }) {
   const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' }>({
     key: null,
     direction: 'asc',
   });
 
-  useEffect(() => {
-    async function loadData(force = false) {
-      if (force) setLoading(true);
-      // HANYA mengambil data KEC
-      const result = (await fetchSheetData('KEC', force)) as Record<string, string>[];
-      setData(result);
-      setLoading(false);
-    }
-    loadData();
+  // ⚡ AGREGATOR OTOMATIS: Mengubah data mentah Kepling menjadi data Rekap Kecamatan
+  const aggregatedData = useMemo(() => {
+    if (!data || data.length === 0) return [];
 
-    const handleRefresh = () => loadData(true);
-    window.addEventListener('forceRefreshData', handleRefresh);
-    return () => window.removeEventListener('forceRefreshData', handleRefresh);
-  }, []);
+    const map = new Map();
+    const kelurahanSetMap = new Map();
+
+    data.forEach(row => {
+      const kec = (row.kecamatan || 'TIDAK DIKETAHUI').toUpperCase();
+      const kel = (row.kelurahan || 'TIDAK DIKETAHUI').toUpperCase();
+
+      if (!map.has(kec)) {
+        map.set(kec, {
+          'Kecamatan': kec,
+          'Jumlah Kelurahan': 0, // Akan dihitung dari Set
+          'Jumlah Kepling': 0,
+          'TARGET': 0,
+          'TK Aktif': 0,
+        });
+        kelurahanSetMap.set(kec, new Set());
+      }
+
+      const kecData = map.get(kec);
+      kecData['Jumlah Kepling'] += 1;
+      kecData['TARGET'] += (row.target || 0);
+      kecData['TK Aktif'] += (row.tk_aktif || 0);
+      kelurahanSetMap.get(kec).add(kel);
+    });
+
+    // Finalisasi perhitungan dan format output agar SAMA PERSIS dengan format Google Sheets lama
+    return Array.from(map.values()).map(kecData => {
+      const kec = kecData['Kecamatan'];
+      const target = kecData['TARGET'];
+      const tkAktif = kecData['TK Aktif'];
+      const gap = tkAktif - target;
+      const percent = target > 0 ? (tkAktif / target) * 100 : 0;
+      
+      const formatNum = (num: number) => new Intl.NumberFormat('id-ID').format(num);
+      const formatPerc = (num: number) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + '%';
+
+      return {
+        'Kecamatan': kec,
+        'Jumlah Kelurahan': formatNum(kelurahanSetMap.get(kec).size),
+        'Jumlah Kepling': formatNum(kecData['Jumlah Kepling']),
+        'TARGET': formatNum(target),
+        'TK Aktif': formatNum(tkAktif),
+        'GAP': formatNum(gap),
+        '%': formatPerc(percent)
+      };
+    });
+  }, [data]);
 
   const getVal = (row: Record<string, string>, targetKey: string) => {
     const foundKey = Object.keys(row).find((k) => k.trim().toLowerCase() === targetKey.toLowerCase());
-    return foundKey ? row[foundKey] : '';
+    return foundKey ? String(row[foundKey]) : '';
   };
+  
   const parsePercent = (val: string) => parseFloat((val || '0').replace(',', '.').replace('%', ''));
 
   const getDynamicBgColor = (val: string) => {
@@ -44,7 +80,7 @@ export default function KecamatanTables() {
   };
 
   const sortedTableData = useMemo(() => {
-    let sortableItems = [...data]; 
+    let sortableItems = [...aggregatedData]; 
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         const valA = getVal(a, sortConfig.key!);
@@ -73,16 +109,18 @@ export default function KecamatanTables() {
       });
     }
     return sortableItems;
-  }, [data, sortConfig]);
+  }, [aggregatedData, sortConfig]);
 
-  if (loading) return <div className="flex-1 flex justify-center items-center text-blue-500 dark:text-blue-400 font-bold">Memuat Data Kecamatan...</div>;
+  if (!data || data.length === 0) {
+    return <div className="flex-1 flex justify-center items-center text-blue-500 dark:text-blue-400 font-bold">Menyiapkan Data Kecamatan...</div>;
+  }
 
   const getSortIcon = (key: string) => {
     if (sortConfig.key !== key) return <span className="text-white/30 opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-[10px]">↕</span>;
     return sortConfig.direction === 'asc' ? <span className="text-white ml-1 text-[10px]">▲</span> : <span className="text-white ml-1 text-[10px]">▼</span>;
   };
 
-  const sortedDataDesc = [...data].sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
+  const sortedDataDesc = [...aggregatedData].sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
   const top10Data = sortedDataDesc.slice(0, 10);
   const worst10Data = [...sortedDataDesc].reverse().slice(0, 10);
 

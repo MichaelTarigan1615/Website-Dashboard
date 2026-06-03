@@ -1,52 +1,17 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { fetchSheetData } from '../utils/googleSheets';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function KpiCards({ 
+  data = [], 
   activeTab = 'KEC',
   filterKec = ['ALL'],
   filterKel = ['ALL'],
   isDarkMode = false
 }: { 
-  activeTab?: string, filterKec?: string[], filterKel?: string[], isDarkMode?: boolean
+  data?: any[], activeTab?: string, filterKec?: string[], filterKel?: string[], isDarkMode?: boolean
 }) {
-  const [data, setData] = useState<Record<string, string>[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  // ⚡ PERUBAHAN: Logika Loading Anti-Kedip & Listener Refresh
-  useEffect(() => {
-    async function loadData(force = false) {
-      // Hanya munculkan layar loading JIKA ditarik paksa ATAU data sebelumnya masih kosong
-      if (force || data.length === 0) {
-        setLoading(true);
-      }
-      
-      const sheetToFetch = activeTab === 'KEPLING' ? 'KEP' : activeTab === 'KEL' ? 'KEL' : 'KEC';
-      const result = (await fetchSheetData(sheetToFetch, force)) as Record<string, string>[];
-      setData(result);
-      
-      setLoading(false);
-    }
-    
-    // Muat saat tab berubah
-    loadData();
-
-    // Pasang telinga untuk mendengar tombol "Segarkan Data"
-    const handleRefresh = () => loadData(true);
-    window.addEventListener('forceRefreshData', handleRefresh);
-    
-    return () => window.removeEventListener('forceRefreshData', handleRefresh);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]); 
-
-  const getVal = (row: Record<string, string>, targetKey: string) => {
-    if (!row) return '';
-    const foundKey = Object.keys(row).find((k) => k.trim().toLowerCase() === targetKey.toLowerCase());
-    return foundKey ? row[foundKey] : '';
-  };
-
-  if (loading) {
+  if (!data || data.length === 0) {
     return (
       <div className="flex flex-col gap-3 w-[360px] h-full items-center justify-center bg-white dark:bg-slate-800 rounded-xl shadow text-blue-500 dark:text-blue-400 font-bold border border-gray-100 dark:border-slate-700 min-h-[600px] transition-colors">
         Memuat Indikator & Grafik...
@@ -54,52 +19,54 @@ export default function KpiCards({
     );
   }
 
-  const parseNum = (val: string) => {
-     if (!val) return 0;
-     const cleanVal = val.replace(/\./g, '').replace(',', '.');
-     const num = parseFloat(cleanVal);
-     return isNaN(num) ? 0 : num;
-  };
-  
-  const parsePercent = (val: string) => parseFloat((val || '0').replace(',', '.').replace('%', ''));
-
   const isKel = activeTab === 'KEL';
   const isKep = activeTab === 'KEPLING';
 
+  const kelKecMap = new Map<string, Set<string>>();
+  data.forEach(item => {
+    const kec = (item.kecamatan || '').toUpperCase().trim();
+    const kel = (item.kelurahan || '').toUpperCase().trim();
+    if (kel) {
+      if (!kelKecMap.has(kel)) kelKecMap.set(kel, new Set());
+      kelKecMap.get(kel)!.add(kec);
+    }
+  });
+
   const filteredData = data.filter(row => {
-    if (!isKel && !isKep) return true; 
-    const kec = getVal(row, 'Kecamatan').toUpperCase();
-    const kel = getVal(row, 'Kelurahan').toUpperCase();
+    if (!isKel && !isKep) return true;
+    const kec = (row.kecamatan || '').toUpperCase().trim();
+    const kel = (row.kelurahan || '').toUpperCase().trim();
+    
     const matchKec = filterKec.includes('ALL') || filterKec.includes(kec);
-    const matchKel = filterKel.includes('ALL') || filterKel.includes(kel);
+    
+    const expectedLabel = (kelKecMap.get(kel)?.size ?? 0) > 1
+      ? `${kel} (${kec})`
+      : kel;
+      
+    const matchKel = filterKel.includes('ALL') || filterKel.includes(expectedLabel);
     return matchKec && matchKel;
   });
 
-  const jmlKecamatan = isKep || isKel 
-    ? new Set(filteredData.map(r => getVal(r, 'Kecamatan').trim().toUpperCase()).filter(Boolean)).size 
-    : filteredData.length;
-    
-  const jmlKelurahan = isKep
-    ? new Set(filteredData.map(r => {
-        const kec = getVal(r, 'Kecamatan').trim().toUpperCase();
-        const kel = getVal(r, 'Kelurahan').trim().toUpperCase();
-        return kec && kel ? `${kec}_${kel}` : null;
-      }).filter(Boolean)).size
-    : isKel ? filteredData.length : filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'Jumlah Kelurahan')), 0);
-    
-  const jmlKepling = isKep
-    ? filteredData.length 
-    : filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'Jumlah Kepling')), 0);
+  const jmlKecamatan = new Set(filteredData.map(r => r.kecamatan).filter(Boolean)).size;
+  const jmlKelurahan = new Set(filteredData.map(r => `${r.kecamatan}_${r.kelurahan}`).filter(Boolean)).size;
+  const jmlKepling = filteredData.length;
 
-  const target = filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'TARGET')), 0);
-  const tkAktif = filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'TK Aktif')), 0);
-  const sisaTarget = filteredData.reduce((acc, row) => acc + parseNum(getVal(row, 'GAP')), 0);
+  const target = filteredData.reduce((acc, row) => acc + (row.target || 0), 0);
+  const tkAktif = filteredData.reduce((acc, row) => acc + (row.tk_aktif || 0), 0);
+  
+  // 💡 PERBAIKAN LOGIKA SISA TARGET: 
+  // Formula = tkAktif - target (menghasilkan angka minus jika belum tercapai)
+  // Jika hasilnya lebih dari 0 (melebihi target), paksa menjadi 0
+  let sisaTarget = tkAktif - target;
+  if (sisaTarget > 0) sisaTarget = 0; 
+
   const percentTkAktif = target > 0 ? (tkAktif / target) * 100 : 0;
 
   const formatNum = (num: number) => num.toLocaleString('id-ID');
   const formatPercent = (num: number) => num.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 
   const pieData = [
+    // Pie chart tidak bisa membaca minus, jadi kita gunakan Math.abs khusus untuk grafik bulat ini
     { name: 'BELUM AKTIF', value: Math.abs(sisaTarget) },
     { name: 'TK AKTIF', value: tkAktif }
   ];
@@ -116,26 +83,61 @@ export default function KpiCards({
     );
   };
 
-  const barNameKey = isKep ? 'Kepala Lingkungan' : isKel ? 'Kelurahan' : 'Kecamatan';
-  
-  let barDataRaw = [...filteredData];
+  let aggregatedData: any[] = [];
+
   if (activeTab === 'KEC') {
-    barDataRaw.sort((a, b) => getVal(a, 'Kecamatan').localeCompare(getVal(b, 'Kecamatan')));
+    const mapKec = new Map();
+    filteredData.forEach(row => {
+      const key = row.kecamatan;
+      if (!mapKec.has(key)) mapKec.set(key, { name: key, fullName: key, target: 0, tk_aktif: 0 });
+      const item = mapKec.get(key);
+      item.target += (row.target || 0);
+      item.tk_aktif += (row.tk_aktif || 0);
+    });
+    aggregatedData = Array.from(mapKec.values());
+  } else if (activeTab === 'KEL') {
+    const mapKel = new Map();
+    filteredData.forEach(row => {
+      const kec = (row.kecamatan || '').toUpperCase().trim();
+      const kel = (row.kelurahan || '').toUpperCase().trim();
+      const label = (kelKecMap.get(kel)?.size ?? 0) > 1 ? `${kel} (${kec})` : kel;
+
+      if (!mapKel.has(label)) mapKel.set(label, { name: label, fullName: label, target: 0, tk_aktif: 0 });
+      const item = mapKel.get(label);
+      item.target += (row.target || 0);
+      item.tk_aktif += (row.tk_aktif || 0);
+    });
+    aggregatedData = Array.from(mapKel.values());
   } else {
-    barDataRaw.sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
-    barDataRaw = barDataRaw.slice(0, 10);
+    aggregatedData = filteredData.map(row => ({
+      name: `${row.kelurahan} - ${row.lingkungan}`,
+      fullName: `Lingkungan ${row.lingkungan}, ${row.kelurahan}`, 
+      target: row.target || 0,
+      tk_aktif: row.tk_aktif || 0
+    }));
   }
 
-  const barData = barDataRaw.map(row => {
-    let fullName = getVal(row, barNameKey); 
-    let nama = fullName;
-    if(isKep && nama.length > 35) nama = nama.substring(0, 34) + '...';
-    else if(!isKep && nama.length > 12) nama = nama.substring(0, 11) + '...'; 
+  aggregatedData = aggregatedData.map(item => ({
+    ...item,
+    percent: item.target > 0 ? (item.tk_aktif / item.target) * 100 : 0
+  }));
+
+  if (activeTab === 'KEC') {
+    aggregatedData.sort((a, b) => a.fullName.localeCompare(b.fullName));
+  } else {
+    aggregatedData.sort((a, b) => b.percent - a.percent);
+    aggregatedData = aggregatedData.slice(0, 10);
+  }
+
+  const barData = aggregatedData.map(row => {
+    let nama = row.fullName;
+    if (isKep && nama.length > 35) nama = nama.substring(0, 34) + '...';
+    else if (!isKep && nama.length > 12) nama = nama.substring(0, 11) + '...'; 
     return {
       name: nama,
-      fullName: fullName, 
-      'TK AKTIF': parseNum(getVal(row, 'TK Aktif')),
-      'TARGET': parseNum(getVal(row, 'TARGET'))
+      fullName: row.fullName, 
+      'TK AKTIF': row.tk_aktif,
+      'TARGET': row.target
     };
   });
 
@@ -151,7 +153,7 @@ export default function KpiCards({
           <p className="text-4xl font-normal mt-1">{formatNum(jmlKelurahan)}</p>
         </div>
         <div className="bg-[#42954f] dark:bg-green-700 text-white px-3 py-2 rounded-md shadow flex-1 transition-colors">
-          <p className="text-sm leading-tight">Jumlah<br/>Kepling</p>
+          <p className="text-sm border-gray-100 leading-tight">Jumlah<br/>Kepling</p>
           <p className="text-4xl font-normal mt-1">{formatNum(jmlKepling)}</p>
         </div>
       </div>
@@ -187,6 +189,7 @@ export default function KpiCards({
         <div className="flex flex-col gap-3 flex-1">
           <div className="bg-[#1681db] dark:bg-blue-800 text-white px-4 py-2 rounded-md shadow flex-1 flex flex-col justify-center transition-colors">
             <p className="text-sm">Sisa Target</p>
+            {/* 💡 PERBAIKAN: Hilangkan Math.abs agar tanda minus muncul! */}
             <p className="text-3xl font-normal mt-1">{formatNum(sisaTarget)}</p>
           </div>
           <div className="bg-[#1681db] dark:bg-blue-800 text-white px-4 py-2 rounded-md shadow flex-1 flex flex-col justify-center transition-colors">
@@ -203,7 +206,6 @@ export default function KpiCards({
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDarkMode ? "#334155" : "#e0e0e0"} />
               <XAxis type="number" tick={{fontSize: 9, fill: isDarkMode ? "#cbd5e1" : "#666"}} stroke={isDarkMode ? "#cbd5e1" : "#666"} />
               <YAxis type="category" dataKey="name" tick={{fontSize: 8, fill: isDarkMode ? "#cbd5e1" : "#666"}} stroke={isDarkMode ? "#cbd5e1" : "#666"} interval={0} width={160} />
-              
               <Tooltip 
                 cursor={{fill: isDarkMode ? 'rgba(255,255,255,0.1)' : 'transparent'}} 
                 wrapperStyle={{ zIndex: 100 }}
@@ -224,7 +226,6 @@ export default function KpiCards({
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? "#334155" : "#e0e0e0"} />
               <XAxis dataKey="name" tick={{fontSize: activeTab === 'KEC' ? 7.5 : 9, fill: isDarkMode ? "#cbd5e1" : "#666"}} angle={-45} textAnchor="end" interval={0} stroke={isDarkMode ? "#cbd5e1" : "#666"} />
               <YAxis tick={{fontSize: 10, fill: isDarkMode ? "#cbd5e1" : "#666"}} tickFormatter={(value) => value >= 1000 ? `${value / 1000} rb` : value} stroke={isDarkMode ? "#cbd5e1" : "#666"} />
-              
               <Tooltip 
                 cursor={{fill: isDarkMode ? 'rgba(255,255,255,0.1)' : 'transparent'}} 
                 wrapperStyle={{ zIndex: 100 }}

@@ -21,7 +21,7 @@ const Header = ({
       try {
         const data = (await fetchSheetData('KEC')) as Record<string, string>[];
         if (data && data.length > 0) {
-          const updateTime = data[0]['Update per'];
+          const updateTime = data[0]['Waktu Update'];
           if (updateTime) setLastUpdate(`Update data per tgl. ${updateTime}`);
           else setLastUpdate('Update data per tgl. (Tambahkan header "Waktu Update" di sel N1)');
         }
@@ -102,7 +102,7 @@ const Header = ({
         
         {/* WADAH TOMBOL KANAN */}
         <div className="flex justify-end gap-2 flex-1 shrink-0">
-          {/* TOMBOL SEGARKAN DATA */}
+          {/* TOMBOL SEGARKAN DATA (Kembalikan ke format melempar event asli Anda) */}
           <button 
             onClick={() => window.dispatchEvent(new Event('forceRefreshData'))}
             className={`flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold border shadow-inner transition-all active:scale-95 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-600' : 'bg-[#0d47a1] hover:bg-[#1565c0] text-white border-blue-400/30'}`}
@@ -111,7 +111,7 @@ const Header = ({
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span className="mt-0.5">Segarkan Data</span>
+              <span className="mt-0.5">Segarkan Data</span>
           </button>
 
           {/* TOMBOL MODE GELAP/TERANG */}

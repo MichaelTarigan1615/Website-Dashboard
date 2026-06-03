@@ -1,6 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { fetchSheetData } from '../utils/googleSheets';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 
 const DataStudioDropdown = ({ title, options, selected, onChange }: {
   title: string;
@@ -101,36 +100,82 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
 };
 
 export default function KelurahanTables({ 
+  data = [], 
   filterKec, setFilterKec, filterKel, setFilterKel 
 }: { 
+  data?: any[],
   filterKec: string[], setFilterKec: (v: string[]) => void,
   filterKel: string[], setFilterKel: (v: string[]) => void
 }) {
-  const [data, setData] = useState<Record<string, string>[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' }>({
     key: null,
     direction: 'asc',
   });
 
-  useEffect(() => {
-    async function loadData(force = false) {
-      if (force) setLoading(true);
-      // HANYA mengambil data KEL
-      const result = (await fetchSheetData('KEL', force)) as Record<string, string>[];
-      setData(result);
-      setLoading(false);
-    }
-    loadData();
+  // ⚡ DETEKSI KELURAHAN KEMBAR DI LINTAS KECAMATAN
+  const kelKecMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    data.forEach(row => {
+      const kec = (row.kecamatan || '').toUpperCase().trim();
+      const kel = (row.kelurahan || '').toUpperCase().trim();
+      if (kel) {
+        if (!map.has(kel)) map.set(kel, new Set());
+        map.get(kel)!.add(kec);
+      }
+    });
+    return map;
+  }, [data]);
 
-    const handleRefresh = () => loadData(true);
-    window.addEventListener('forceRefreshData', handleRefresh);
-    return () => window.removeEventListener('forceRefreshData', handleRefresh);
-  }, []);
+  // AGREGATOR MASUKAN DATA FIRESTORE
+  const aggregatedData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    const map = new Map();
+
+    data.forEach(row => {
+      const kec = (row.kecamatan || 'TIDAK DIKETAHUI').toUpperCase().trim();
+      const kel = (row.kelurahan || 'TIDAK DIKETAHUI').toUpperCase().trim();
+      const uniqueKey = `${kec}_${kel}`;
+
+      if (!map.has(uniqueKey)) {
+        map.set(uniqueKey, {
+          'Kecamatan': kec,
+          'Kelurahan': kel,
+          'Jumlah Kepling': 0,
+          'TARGET': 0,
+          'TK Aktif': 0,
+        });
+      }
+
+      const kelData = map.get(uniqueKey);
+      kelData['Jumlah Kepling'] += 1;
+      kelData['TARGET'] += (row.target || 0);
+      kelData['TK Aktif'] += (row.tk_aktif || 0);
+    });
+
+    return Array.from(map.values()).map(kelData => {
+      const target = kelData['TARGET'];
+      const tkAktif = kelData['TK Aktif'];
+      const gap = tkAktif - target;
+      const percent = target > 0 ? (tkAktif / target) * 100 : 0;
+      
+      const formatNum = (num: number) => new Intl.NumberFormat('id-ID').format(num);
+      const formatPerc = (num: number) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + '%';
+
+      return {
+        'Kecamatan': kelData['Kecamatan'],
+        'Kelurahan': kelData['Kelurahan'],
+        'Jumlah Kepling': formatNum(kelData['Jumlah Kepling']),
+        'TARGET': formatNum(target),
+        'TK Aktif': formatNum(tkAktif),
+        'GAP': formatNum(gap),
+        '%': formatPerc(percent)
+      };
+    });
+  }, [data]);
 
   const getVal = (row: Record<string, string>, targetKey: string) => {
     const foundKey = Object.keys(row).find((k) => k.trim().toLowerCase() === targetKey.toLowerCase());
-    return foundKey ? row[foundKey] : '';
+    return foundKey ? String(row[foundKey]) : '';
   };
 
   const parsePercent = (val: string) => parseFloat((val || '0').replace(',', '.').replace('%', ''));
@@ -145,9 +190,17 @@ export default function KelurahanTables({
     return `hsl(${hue}, 85%, 45%)`; 
   };
 
-  const filteredData = data.filter(row => {
-    const matchKec = filterKec.includes('ALL') || filterKec.includes(getVal(row, 'Kecamatan').toUpperCase());
-    const matchKel = filterKel.includes('ALL') || filterKel.includes(getVal(row, 'Kelurahan').toUpperCase());
+  // FILTERING LOGIC MENGGUNAKAN LABEL DINAMIS YANG UNIK
+  const filteredData = aggregatedData.filter(row => {
+    const kec = row.Kecamatan;
+    const kel = row.Kelurahan;
+    const matchKec = filterKec.includes('ALL') || filterKec.includes(kec);
+    
+    const expectedLabel = (kelKecMap.get(kel)?.size ?? 0) > 1
+      ? `${kel} (${kec})`
+      : kel;
+
+    const matchKel = filterKel.includes('ALL') || filterKel.includes(expectedLabel);
     return matchKec && matchKel;
   });
 
@@ -191,10 +244,10 @@ export default function KelurahanTables({
     return sortableItems;
   }, [filteredData, sortConfig]);
 
-  if (loading) {
+  if (!data || data.length === 0) {
     return (
       <div className="w-full h-[500px] flex items-center justify-center">
-        <div className="text-[#1b75d8] dark:text-blue-400 font-bold text-xl animate-pulse">Memuat Data Kelurahan...</div>
+        <div className="text-[#1b75d8] dark:text-blue-400 font-bold text-xl animate-pulse">Menyiapkan Data Kelurahan...</div>
       </div>
     );
   }
@@ -205,19 +258,20 @@ export default function KelurahanTables({
   };
 
   const kecOptionsMap = new Map();
-  data.forEach(row => {
+  aggregatedData.forEach(row => {
     const kec = getVal(row, 'Kecamatan').toUpperCase();
     if (!kec) return;
     kecOptionsMap.set(kec, (kecOptionsMap.get(kec) || 0) + parseNum(getVal(row, 'TK Aktif')));
   });
   const kecOptions = Array.from(kecOptionsMap.entries()).map(([label, metric]) => ({label, metric})).sort((a,b) => b.metric - a.metric); 
 
-  const availableKelData = filterKec.includes('ALL') ? data : data.filter(r => filterKec.includes(getVal(r, 'Kecamatan').toUpperCase()));
+  const availableKelData = filterKec.includes('ALL') ? aggregatedData : aggregatedData.filter(r => filterKec.includes(r.Kecamatan));
   const kelOptionsMap = new Map();
   availableKelData.forEach(row => {
-    const kel = getVal(row, 'Kelurahan').toUpperCase();
-    if (!kel) return;
-    kelOptionsMap.set(kel, (kelOptionsMap.get(kel) || 0) + parseNum(getVal(row, 'TK Aktif')));
+    const kec = row.Kecamatan;
+    const kel = row.Kelurahan;
+    const label = (kelKecMap.get(kel)?.size ?? 0) > 1 ? `${kel} (${kec})` : kel;
+    kelOptionsMap.set(label, (kelOptionsMap.get(label) || 0) + parseNum(row['TK Aktif']));
   });
   const kelOptions = Array.from(kelOptionsMap.entries()).map(([label, metric]) => ({label, metric})).sort((a,b) => b.metric - a.metric);
 
@@ -228,7 +282,7 @@ export default function KelurahanTables({
   const worst10Data = sortedDataAsc.slice(0, 10);
 
   return (
-    <div className="flex gap-4 w-full">
+    <div className="flex gap-4 w-full h-full">
       <div className="flex-[1.5] relative min-h-full">
         <div className="absolute inset-0 bg-[#f8faeb] dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col gap-3 transition-colors">
           <h2 className="font-bold text-[16px] text-black dark:text-white px-1 flex-none">Rekap Kelurahan</h2>
