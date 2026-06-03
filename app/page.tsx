@@ -186,7 +186,6 @@ export default function Home() {
                   setFilterKec={setFilterKec} 
                   filterKel={filterKel} 
                   setFilterKel={setFilterKel} 
-                  rekapData={rekapData} // 💡 PERBAIKAN 4: Mengoper state rekap data peserta ke dalam tabel Kepling
                 />
               </div>
             )}
