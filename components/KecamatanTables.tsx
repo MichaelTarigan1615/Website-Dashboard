@@ -1,14 +1,22 @@
 "use client";
 import React, { useState, useMemo } from 'react';
 
-// Menerima data real-time yang sudah diparsing dari page.tsx
-export default function KecamatanTables({ data = [] }: { data?: any[] }) {
+// ⚡ PERBAIKAN 1: Mendefinisikan KTP/Tipe Data yang jelas agar TS tidak protes
+interface KeplingData {
+  kecamatan?: string;
+  kelurahan?: string;
+  target?: number;
+  tk_aktif?: number;
+  [key: string]: unknown;
+}
+
+// ⚡ PERBAIKAN 2: Mengganti any[] menjadi KeplingData[]
+export default function KecamatanTables({ data = [] }: { data?: KeplingData[] }) {
   const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' }>({
     key: null,
     direction: 'asc',
   });
 
-  // ⚡ AGREGATOR OTOMATIS: Mengubah data mentah Kepling menjadi data Rekap Kecamatan
   const aggregatedData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
@@ -22,7 +30,7 @@ export default function KecamatanTables({ data = [] }: { data?: any[] }) {
       if (!map.has(kec)) {
         map.set(kec, {
           'Kecamatan': kec,
-          'Jumlah Kelurahan': 0, // Akan dihitung dari Set
+          'Jumlah Kelurahan': 0, 
           'Jumlah Kepling': 0,
           'TARGET': 0,
           'TK Aktif': 0,
@@ -37,7 +45,6 @@ export default function KecamatanTables({ data = [] }: { data?: any[] }) {
       kelurahanSetMap.get(kec).add(kel);
     });
 
-    // Finalisasi perhitungan dan format output agar SAMA PERSIS dengan format Google Sheets lama
     return Array.from(map.values()).map(kecData => {
       const kec = kecData['Kecamatan'];
       const target = kecData['TARGET'];
@@ -48,6 +55,7 @@ export default function KecamatanTables({ data = [] }: { data?: any[] }) {
       const formatNum = (num: number) => new Intl.NumberFormat('id-ID').format(num);
       const formatPerc = (num: number) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + '%';
 
+      // ⚡ PERBAIKAN 3: Mengunci identitas output menjadi Record String
       return {
         'Kecamatan': kec,
         'Jumlah Kelurahan': formatNum(kelurahanSetMap.get(kec).size),
@@ -56,7 +64,7 @@ export default function KecamatanTables({ data = [] }: { data?: any[] }) {
         'TK Aktif': formatNum(tkAktif),
         'GAP': formatNum(gap),
         '%': formatPerc(percent)
-      };
+      } as Record<string, string>;
     });
   }, [data]);
 
@@ -80,13 +88,15 @@ export default function KecamatanTables({ data = [] }: { data?: any[] }) {
   };
 
   const sortedTableData = useMemo(() => {
-    let sortableItems = [...aggregatedData]; 
+    // ⚡ PERBAIKAN 4: Menambahkan identitas yang jelas pada sortableItems
+    let sortableItems: Record<string, string>[] = [...aggregatedData]; 
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         const valA = getVal(a, sortConfig.key!);
         const valB = getVal(b, sortConfig.key!);
 
-        const cleanValue = (val: any) => {
+        // ⚡ PERBAIKAN 5: Mengganti any menjadi tipe yang aman
+        const cleanValue = (val: string | number | unknown) => {
           if (!val) return 0;
           const strVal = String(val);
           const cleanStr = strVal.replace(/\./g, '').replace(/,/g, '.').replace('%', '');

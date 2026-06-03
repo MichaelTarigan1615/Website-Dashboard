@@ -1,6 +1,15 @@
 "use client";
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
+// ⚡ PERBAIKAN 1: Mendefinisikan Tipe Data
+interface KeplingData {
+  kecamatan?: string;
+  kelurahan?: string;
+  target?: number;
+  tk_aktif?: number;
+  [key: string]: unknown;
+}
+
 const DataStudioDropdown = ({ title, options, selected, onChange }: {
   title: string;
   options: { label: string, metric: number }[];
@@ -99,11 +108,12 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
   );
 };
 
+// ⚡ PERBAIKAN 2: Mengganti any[] dengan antarmuka yang kuat
 export default function KelurahanTables({ 
   data = [], 
   filterKec, setFilterKec, filterKel, setFilterKel 
 }: { 
-  data?: any[],
+  data?: KeplingData[],
   filterKec: string[], setFilterKec: (v: string[]) => void,
   filterKel: string[], setFilterKel: (v: string[]) => void
 }) {
@@ -112,7 +122,6 @@ export default function KelurahanTables({
     direction: 'asc',
   });
 
-  // ⚡ DETEKSI KELURAHAN KEMBAR DI LINTAS KECAMATAN
   const kelKecMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
     data.forEach(row => {
@@ -126,7 +135,6 @@ export default function KelurahanTables({
     return map;
   }, [data]);
 
-  // AGREGATOR MASUKAN DATA FIRESTORE
   const aggregatedData = useMemo(() => {
     if (!data || data.length === 0) return [];
     const map = new Map();
@@ -161,6 +169,7 @@ export default function KelurahanTables({
       const formatNum = (num: number) => new Intl.NumberFormat('id-ID').format(num);
       const formatPerc = (num: number) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + '%';
 
+      // ⚡ PERBAIKAN 3: Kunci struktur output menjadi Record
       return {
         'Kecamatan': kelData['Kecamatan'],
         'Kelurahan': kelData['Kelurahan'],
@@ -169,7 +178,7 @@ export default function KelurahanTables({
         'TK Aktif': formatNum(tkAktif),
         'GAP': formatNum(gap),
         '%': formatPerc(percent)
-      };
+      } as Record<string, string>;
     });
   }, [data]);
 
@@ -190,7 +199,6 @@ export default function KelurahanTables({
     return `hsl(${hue}, 85%, 45%)`; 
   };
 
-  // FILTERING LOGIC MENGGUNAKAN LABEL DINAMIS YANG UNIK
   const filteredData = aggregatedData.filter(row => {
     const kec = row.Kecamatan;
     const kel = row.Kelurahan;
@@ -211,13 +219,15 @@ export default function KelurahanTables({
   };
 
   const displayData = useMemo(() => {
-    let sortableItems = [...filteredData];
+    // ⚡ PERBAIKAN 4: Menentukan identitas pasti untuk sortableItems
+    let sortableItems: Record<string, string>[] = [...filteredData];
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         const valA = getVal(a, sortConfig.key!);
         const valB = getVal(b, sortConfig.key!);
 
-        const cleanValue = (val: any) => {
+        // ⚡ PERBAIKAN 5: Mengganti parameter any yang tidak aman
+        const cleanValue = (val: string | number | unknown) => {
           if (!val) return 0;
           const strVal = String(val);
           const cleanStr = strVal.replace(/\./g, '').replace(/,/g, '.').replace('%', '');
