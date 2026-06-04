@@ -4,6 +4,8 @@ import { pool } from '@/utils/tidb';
 import Papa from 'papaparse';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; 
+export const fetchCache = 'force-no-store';
 
 const SHEET_ID = '15JMEUKugjMYhmzm7mQEft80nMHkwLsg9NTjyXJ485Zw';
 
@@ -13,6 +15,9 @@ export async function GET(request: Request) {
   const sheetName = (searchParams.get('tab') || '').toUpperCase().trim();
   const clientTimestamp = searchParams.get('t'); 
 
+  // ========================================================
+  // 1. DATA PIPA DETAIL PESERTA (REKAP)
+  // ========================================================
   if (sheetName === 'REKAP') {
     const cacheBuster = clientTimestamp ? clientTimestamp : Math.floor(Date.now() / 60000);
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=REKAP&v=${cacheBuster}`;
@@ -30,8 +35,17 @@ export async function GET(request: Request) {
           const foundKey = Object.keys(r).find(k => k.trim().toLowerCase() === target.toLowerCase());
           return foundKey ? r[foundKey] : '';
         };
+
+        let wilayahRaw = getValLocal(rowData, 'Wilayah');
+        if (wilayahRaw.includes('SEI KERA HILIR') && !wilayahRaw.includes('SEI KERA HILIR-I') && !wilayahRaw.includes('SEI KERA HILIR-II')) {
+          wilayahRaw = wilayahRaw.replace('SEI KERA HILIR', 'SEI KERA HILIR-I');
+        }
+        if (wilayahRaw.includes('SIDORAME BARAT') && !wilayahRaw.includes('SIDORAME BARAT-I') && !wilayahRaw.includes('SIDORAME BARAT-II')) {
+          wilayahRaw = wilayahRaw.replace('SIDORAME BARAT', 'SIDORAME BARAT-I');
+        }
+
         return {
-          'Wilayah': getValLocal(rowData, 'Wilayah'),
+          'Wilayah': wilayahRaw,
           'NIK': getValLocal(rowData, 'NIK'),
           'Nama TK': getValLocal(rowData, 'Nama TK')
         };
@@ -44,6 +58,58 @@ export async function GET(request: Request) {
     }
   }
 
+  // ========================================================
+  // 2. ⚡ AUTO-BUILD & SYNC TOTAL: SPREADSHEET (KEP) -> TIDB ⚡
+  // ========================================================
+  if (sheetName !== 'REKAP') {
+    try {
+      const cacheBuster = clientTimestamp ? clientTimestamp : Math.floor(Date.now() / 60000);
+      const urlKep = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=KEP&v=${cacheBuster}`;
+      
+      const responseKep = await fetch(urlKep, { cache: 'no-store' });
+      if (responseKep.ok) {
+        const csvTextKep = await responseKep.text();
+        const resultsKep = Papa.parse(csvTextKep, { header: true, skipEmptyLines: true });
+
+        // Siapkan Wadah Data untuk Pemasukan Massal (Semua Kolom!)
+        const bulkData: [string, string, string, string, number, number, number][] = [];
+        for (const row of resultsKep.data as Record<string, string>[]) {
+          const docId = row['Kepala Lingkungan'];
+          const kec = row['Kecamatan'];
+          const kel = row['Kelurahan'];
+          const ling = row['Nomor'];
+          const target = parseInt(row['TARGET']) || 50;
+          const tkAktif = parseInt(row['TK Aktif']) || 0;
+          
+          // Pastikan baris yang masuk adalah data ril, bukan header kosong
+          if (docId && kec && kel && ling) {
+            bulkData.push([docId, kec, kel, ling, target, tkAktif, 0]);
+          }
+        }
+
+        if (bulkData.length > 0) {
+          // Mantra Sakti: Eksekusi 2001 baris secara massal dengan pembaruan otomatis!
+          await pool.query(
+            `INSERT INTO data_kepling (doc_id, kecamatan, kelurahan, lingkungan, target, tk_rekap, tk_form) 
+             VALUES ? 
+             ON DUPLICATE KEY UPDATE 
+             kecamatan = VALUES(kecamatan), 
+             kelurahan = VALUES(kelurahan), 
+             lingkungan = VALUES(lingkungan), 
+             target = VALUES(target), 
+             tk_rekap = VALUES(tk_rekap)`,
+            [bulkData]
+          );
+        }
+      }
+    } catch (syncError) {
+      console.error("⚠️ [AUTO-SYNC] Gagal menarik data dari Google Sheets:", syncError);
+    }
+  }
+
+  // ========================================================
+  // 3. AMBIL WAKTU TERBARU DARI DATABASE (TIDB)
+  // ========================================================
   let dateObj = new Date(); 
   try {
     const [timeRows] = await pool.query(`
@@ -68,7 +134,6 @@ export async function GET(request: Request) {
     console.error("⚠️ Gagal mengambil waktu TiDB:", err);
   }
 
-  // 🟢 FORMAT TANGGAL MANUAL TERKUNCI (DD/MM/YYYY HH:mm:ss)
   const tzString = dateObj.toLocaleString("en-US", { timeZone: "Asia/Jakarta" });
   const wibDate = new Date(tzString);
   const dd = String(wibDate.getDate()).padStart(2, '0');
@@ -80,6 +145,9 @@ export async function GET(request: Request) {
   
   const waktuFormatted = `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
 
+  // ========================================================
+  // 4. KEMBALIKAN DATA UTAMA KE FRONTEND
+  // ========================================================
   try {
     const [rows] = await pool.query('SELECT doc_id, kecamatan, kelurahan, lingkungan, target, tk_rekap, tk_form FROM data_kepling');
     const castedRows = rows as Record<string, unknown>[];
