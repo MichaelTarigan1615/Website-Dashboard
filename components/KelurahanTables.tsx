@@ -108,7 +108,6 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
   );
 };
 
-// ⚡ PERBAIKAN 2: Mengganti any[] dengan antarmuka yang kuat
 export default function KelurahanTables({ 
   data = [], 
   filterKec, setFilterKec, filterKel, setFilterKel 
@@ -169,7 +168,6 @@ export default function KelurahanTables({
       const formatNum = (num: number) => new Intl.NumberFormat('id-ID').format(num);
       const formatPerc = (num: number) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + '%';
 
-      // ⚡ PERBAIKAN 3: Kunci struktur output menjadi Record
       return {
         'Kecamatan': kelData['Kecamatan'],
         'Kelurahan': kelData['Kelurahan'],
@@ -187,16 +185,22 @@ export default function KelurahanTables({
     return foundKey ? String(row[foundKey]) : '';
   };
 
-  const parsePercent = (val: string) => parseFloat((val || '0').replace(',', '.').replace('%', ''));
+  // ⚡ PERBAIKAN: Fungsi parsing yang kebal terhadap angka ribuan
   const parseNum = (val: string) => {
-    const num = parseFloat((val || '0').replace(/\./g, '').replace(',', '.'));
+    const num = parseFloat((val || '0').replace(/\./g, '').replace(/,/g, '.'));
     return isNaN(num) ? 0 : num;
   };
+  
+  const parsePercent = (val: string) => {
+    return parseNum(String(val).replace('%', ''));
+  };
 
+  // ⚡ PERBAIKAN: Mengatur batas Hue ke 120 (Hijau) agar warna tidak mentok di Oranye
   const getDynamicBgColor = (val: string) => {
     const percent = parsePercent(val);
-    const hue = Math.max(0, Math.min((percent / 40) * 35, 35)); 
-    return `hsl(${hue}, 85%, 45%)`; 
+    // 0% = Merah (Hue 0) | 50% = Kuning (Hue ~60) | >= 100% = Hijau (Hue 120)
+    const hue = Math.max(0, Math.min((percent / 100) * 120, 120)); 
+    return `hsl(${hue}, 85%, 42%)`; // 42% Lightness agar font putih tetap terbaca jelas
   };
 
   const filteredData = aggregatedData.filter(row => {
@@ -219,14 +223,12 @@ export default function KelurahanTables({
   };
 
   const displayData = useMemo(() => {
-    // ⚡ PERBAIKAN 4: Menentukan identitas pasti untuk sortableItems
     let sortableItems: Record<string, string>[] = [...filteredData];
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         const valA = getVal(a, sortConfig.key!);
         const valB = getVal(b, sortConfig.key!);
 
-        // ⚡ PERBAIKAN 5: Mengganti parameter any yang tidak aman
         const cleanValue = (val: string | number | unknown) => {
           if (!val) return 0;
           const strVal = String(val);
