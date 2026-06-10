@@ -84,7 +84,7 @@ const Header = ({
             <Image src="/images/foto-kabid.png" alt="Kabid" width={110} height={110} className="object-contain object-bottom" />
             <div className={`border shadow-sm px-2 py-1.5 flex flex-col items-center text-center w-[155px] -mt-1 rounded z-10 transition-colors duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white/95 border-gray-200'}`}>
               <p className={`text-[10px] font-black leading-tight uppercase ${isDarkMode ? 'text-gray-200' : 'text-[#263238]'}`}>BOY CITRA L. TOBING</p>
-              <p className={`text-[8px] font-bold leading-tight uppercase mt-0.5 ${isDarkMode ? 'text-blue-400' : 'text-[#1b75d8]'}`}>Kepala Bidang Kepesertaan Progus</p>
+              <p className={`text-[8px] font-bold leading-tight uppercase mt-0.5 ${isDarkMode ? 'text-blue-400' : 'text-[#1b75d8]'}`}>Kepala Bidang Kepesertaan Progsus</p>
             </div>
           </div>
         </div>
