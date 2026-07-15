@@ -43,11 +43,9 @@ export default function Home() {
     }
   }, [activeTab, mountedTabs]);
 
-  // 🟢 FUNGSI UTAMA: Ambil Data Instan dari TiDB API Route (SPA Style)
   const muatDataDariTiDB = useCallback(async (isManualClick = false) => {
     if (isManualClick) setRefreshing(true);
     try {
-      // Alamat diarahkan ke /api/kepling dengan cache-buster dinamis jika tombol segarkan diklik
       const urlBuster = isManualClick ? `?t=${Date.now()}` : '';
       
       // 💡 PERBAIKAN 2: Mengubah '/api/sheets' menjadi '/api/kepling' (Jalur TiDB)
@@ -55,7 +53,6 @@ export default function Home() {
       const json = await response.json();
       
       if (json.status === 'success' && Array.isArray(json.data)) {
-        // Normalisasi data dari TiDB SQL agar struktur variabelnya klop 100% dengan komponen tabel Anda
         const dataTerformat = json.data.map((row: any) => {
           const totalTkAktif = (row.tk_form || 0) + (row.tk_rekap || 0);
           
@@ -95,12 +92,10 @@ export default function Home() {
     }
   }, []);
 
-  // Memuat data otomatis saat pertama kali web dibuka
   useEffect(() => {
     muatDataDariTiDB();
   }, [muatDataDariTiDB]);
 
-  // 🎯 PENANGKAP EVENT TOMBOL SEGARKAN DATA (HEADER)
   useEffect(() => {
     const handleForceRefresh = () => {
       console.log("🔄 Sinyal Diterima! Menyegarkan data murni tanpa reload halaman...");
@@ -181,7 +176,8 @@ export default function Home() {
             {mountedTabs.KEPLING && (
               <div className={`flex-1 flex min-w-0 ${activeTab === 'KEPLING' ? '' : 'hidden'}`}>
                 <KeplingTables 
-                  data={dataKepling} 
+                  data={dataKepling}
+                  rekapData={rekapData} // 💡 INI TAMBAHAN BARU
                   filterKec={filterKec} 
                   setFilterKec={setFilterKec} 
                   filterKel={filterKel} 

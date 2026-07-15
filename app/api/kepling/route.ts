@@ -47,7 +47,8 @@ export async function GET(request: Request) {
         return {
           'Wilayah': wilayahRaw,
           'NIK': getValLocal(rowData, 'NIK'),
-          'Nama TK': getValLocal(rowData, 'Nama TK')
+          'Nama TK': getValLocal(rowData, 'Nama TK'),
+          'Status TK': getValLocal(rowData, 'Status TK') // 💡 PERBAIKAN 1: Menyalurkan status AKTIF/TIDAK AKTIF ke detail tabel website
         };
       });
 
@@ -71,7 +72,6 @@ export async function GET(request: Request) {
         const csvTextKep = await responseKep.text();
         const resultsKep = Papa.parse(csvTextKep, { header: true, skipEmptyLines: true });
 
-        // Siapkan Wadah Data untuk Pemasukan Massal (Semua Kolom!)
         const bulkData: [string, string, string, string, number, number, number][] = [];
         for (const row of resultsKep.data as Record<string, string>[]) {
           const docId = row['Kepala Lingkungan'];
@@ -79,16 +79,19 @@ export async function GET(request: Request) {
           const kel = row['Kelurahan'];
           const ling = row['Nomor'];
           const target = parseInt(row['TARGET']) || 50;
-          const tkAktif = parseInt(row['TK Aktif']) || 0;
           
-          // Pastikan baris yang masuk adalah data ril, bukan header kosong
+          // 💡 PERBAIKAN 2: Mengambil kedua kolom baru secara presisi (antisipasi typo Akusisi/Akuisisi)
+          const akuisisiVal = parseInt(row['Akusisi']) || parseInt(row['Akuisisi']) || 0;
+          const tkAktifVal = parseInt(row['TK Aktif']) || 0;
+          
           if (docId && kec && kel && ling) {
-            bulkData.push([docId, kec, kel, ling, target, tkAktif, 0]);
+            // Urutan kolom TiDB: doc_id, kecamatan, kelurahan, lingkungan, target, tk_rekap (TK Aktif), tk_form (Akuisisi 2026)
+            bulkData.push([docId, kec, kel, ling, target, tkAktifVal, akuisisiVal]);
           }
         }
 
         if (bulkData.length > 0) {
-          // Mantra Sakti: Eksekusi 2001 baris secara massal dengan pembaruan otomatis!
+          // Sinkronisasi data massal 2.001 Kepling langsung ke TiDB Cloud
           await pool.query(
             `INSERT INTO data_kepling (doc_id, kecamatan, kelurahan, lingkungan, target, tk_rekap, tk_form) 
              VALUES ? 
@@ -97,7 +100,8 @@ export async function GET(request: Request) {
              kelurahan = VALUES(kelurahan), 
              lingkungan = VALUES(lingkungan), 
              target = VALUES(target), 
-             tk_rekap = VALUES(tk_rekap)`,
+             tk_rekap = VALUES(tk_rekap),
+             tk_form = VALUES(tk_form)`,
             [bulkData]
           );
         }
