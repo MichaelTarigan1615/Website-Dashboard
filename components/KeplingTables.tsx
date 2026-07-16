@@ -53,7 +53,7 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
           <div className="bg-[#9e9e9e] dark:bg-slate-700 text-black dark:text-white px-3 py-2 flex items-center gap-3 font-bold text-xs">
             <input type="checkbox" className="w-4 h-4 cursor-pointer accent-gray-700 dark:accent-blue-500" checked={isAll} onChange={handleToggleAll} />
             <span className="flex-1">{title} ({selectedCount})</span>
-            <span>AKUISISI</span> {/* 💡 Update ke AKUISISI */}
+            <span>AKUISISI</span>
           </div>
           <div className="p-2 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
             <div className="flex items-center gap-2 px-2 py-1.5 border border-gray-300 dark:border-slate-600 rounded-sm">
@@ -112,9 +112,9 @@ export default function KeplingTables({
 
     return data.map(row => {
       const target = row.target || 0;
-      const akuisisi = row.tk_form || 0; // 💡 tk_form = Akuisisi
-      const tkAktif = row.tk_rekap || 0;  // 💡 tk_rekap = TK Aktif Baru
-      const gap = akuisisi - target;     // 💡 Dihitung berdasar Akuisisi
+      const akuisisi = row.tk_form || 0; 
+      const tkAktif = row.tk_rekap || 0;  
+      const gap = akuisisi - target;     
       const percent = target > 0 ? (akuisisi / target) * 100 : 0;
       
       const formatNum = (num: number) => new Intl.NumberFormat('id-ID').format(num);
@@ -126,8 +126,8 @@ export default function KeplingTables({
         'Kelurahan': row.kelurahan || '',
         'Kepala Lingkungan': keplingName,
         'TARGET': formatNum(target),
-        'AKUISISI': formatNum(akuisisi), // 💡 Kolom Baru
-        'TK AKTIF': formatNum(tkAktif),   // 💡 Kolom Baru
+        'AKUISISI': formatNum(akuisisi), 
+        'TK AKTIF': formatNum(tkAktif),  
         'GAP': formatNum(gap),
         '%': formatPerc(percent)
       };
@@ -153,21 +153,17 @@ export default function KeplingTables({
     return isNaN(num) ? 0 : num;
   };
 
-  const getTopBgColor = (val: string) => {
+  // 💡 KESERAGAMAN WARNA
+  const getSharedColor = (val: string) => {
     const percent = parsePercent(val);
     const hue = Math.max(0, Math.min((percent / 100) * 120, 120)); 
-    return `hsl(${hue}, 70%, 45%)`; 
-  };
-  const getWorstBgColor = (val: string) => {
-    const percent = parsePercent(val);
-    const lightness = Math.max(30, Math.min(80, 45 + (percent / 10))); 
-    return `hsl(0, 80%, ${lightness}%)`; 
+    return `hsl(${hue}, 85%, 42%)`; 
   };
 
   const kecOptionsMap = new Map();
   formattedData.forEach(row => {
     const kec = getVal(row, 'Kecamatan').toUpperCase();
-    if (kec) kecOptionsMap.set(kec, (kecOptionsMap.get(kec) || 0) + parseNum(getVal(row, 'AKUISISI'))); // Sort filter by Akuisisi
+    if (kec) kecOptionsMap.set(kec, (kecOptionsMap.get(kec) || 0) + parseNum(getVal(row, 'AKUISISI')));
   });
   const kecOptions = Array.from(kecOptionsMap.entries()).map(([label, metric]) => ({label, metric})).sort((a,b) => b.metric - a.metric);
 
@@ -177,7 +173,7 @@ export default function KeplingTables({
     const kec = getVal(row, 'Kecamatan').toUpperCase();
     const kel = getVal(row, 'Kelurahan').toUpperCase();
     const label = (kelKecMap.get(kel)?.size ?? 0) > 1 ? `${kel} (${kec})` : kel;
-    kelOptionsMap.set(label, (kelOptionsMap.get(label) || 0) + parseNum(getVal(row, 'AKUISISI'))); // Sort filter by Akuisisi
+    kelOptionsMap.set(label, (kelOptionsMap.get(label) || 0) + parseNum(getVal(row, 'AKUISISI')));
   });
   const kelOptions = Array.from(kelOptionsMap.entries()).map(([label, metric]) => ({label, metric})).sort((a,b) => b.metric - a.metric);
 
@@ -205,7 +201,7 @@ export default function KeplingTables({
 
     return (
       <tr className="bg-blue-50 dark:bg-slate-800/80 shadow-inner">
-        <td colSpan={7} className="p-4 border-b border-blue-200 dark:border-slate-700"> {/* 💡 Update colSpan ke 7 */}
+        <td colSpan={7} className="p-4 border-b border-blue-200 dark:border-slate-700">
           <div className="bg-white dark:bg-slate-900 rounded-md border border-blue-300 dark:border-slate-600 shadow-sm overflow-hidden max-h-[300px] flex flex-col">
             <div className="px-3 py-2 bg-[#e3f2fd] dark:bg-slate-800 border-b border-blue-200 dark:border-slate-700 flex justify-between items-center">
               <span className="text-xs font-bold text-[#1565c0] dark:text-blue-300">Detail Peserta: {keplingName}</span>
@@ -279,7 +275,6 @@ export default function KeplingTables({
       </div>
 
       <div className="flex gap-4 flex-1 relative min-h-[500px]">
-        {/* TABEL TOP 200 */}
         <div className="flex-1 absolute inset-y-0 left-0 w-[calc(50%-8px)] bg-[#f8faeb] dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
           <div className="px-4 py-3 bg-[#f8faeb] dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center h-[50px]">
             <h2 className="font-bold text-[15px] text-black dark:text-white">Top 200 Kepala Lingkungan</h2>
@@ -292,8 +287,8 @@ export default function KeplingTables({
                   <th className="px-3 py-3 w-8 text-center">No.</th>
                   <th className="px-3 py-3">Kepala Lingkungan</th>
                   <th className="px-3 py-3 text-center uppercase">TARGET</th>
-                  <th className="px-3 py-3 text-center uppercase">AKUISISI</th> {/* 💡 Kolom Baru */}
-                  <th className="px-3 py-3 text-center uppercase">TK AKTIF</th>   {/* 💡 Kolom Baru */}
+                  <th className="px-3 py-3 text-center uppercase">AKUISISI</th> 
+                  <th className="px-3 py-3 text-center uppercase">TK AKTIF</th>   
                   <th className="px-3 py-3 text-center uppercase">GAP</th>
                   <th className="px-3 py-3 text-center">%</th>
                 </tr>
@@ -316,7 +311,7 @@ export default function KeplingTables({
                         <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'AKUISISI')}</td>
                         <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TK AKTIF')}</td>
                         <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'GAP')}</td>
-                        <td className="px-3 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getTopBgColor(getVal(row, '%')) }}>
+                        <td className="px-3 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                           {getVal(row, '%')}
                         </td>
                       </tr>
@@ -329,7 +324,6 @@ export default function KeplingTables({
           </div>
         </div>
 
-        {/* TABEL WORST 200 */}
         <div className="flex-1 absolute inset-y-0 right-0 w-[calc(50%-8px)] bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
           <div className="px-4 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center h-[50px]">
             <h2 className="font-bold text-[15px] text-black dark:text-white">Worst 200 Kepala Lingkungan</h2>
@@ -342,8 +336,8 @@ export default function KeplingTables({
                   <th className="px-3 py-3 w-8 text-center">No.</th>
                   <th className="px-3 py-3">Kepala Lingkungan</th>
                   <th className="px-3 py-3 text-center uppercase">TARGET</th>
-                  <th className="px-3 py-3 text-center uppercase">AKUISISI</th> {/* 💡 Kolom Baru */}
-                  <th className="px-3 py-3 text-center uppercase">TK AKTIF</th>   {/* 💡 Kolom Baru */}
+                  <th className="px-3 py-3 text-center uppercase">AKUISISI</th> 
+                  <th className="px-3 py-3 text-center uppercase">TK AKTIF</th>   
                   <th className="px-3 py-3 text-center uppercase">GAP</th>
                   <th className="px-3 py-3 text-center">%</th>
                 </tr>
@@ -366,7 +360,7 @@ export default function KeplingTables({
                         <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'AKUISISI')}</td>
                         <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TK AKTIF')}</td>
                         <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'GAP')}</td>
-                        <td className="px-3 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getWorstBgColor(getVal(row, '%')) }}>
+                        <td className="px-3 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                           {getVal(row, '%')}
                         </td>
                       </tr>

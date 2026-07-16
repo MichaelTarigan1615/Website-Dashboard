@@ -1,13 +1,12 @@
 "use client";
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
-// ⚡ PERBAIKAN 1: Mendefinisikan Tipe Data
 interface KeplingData {
   kecamatan?: string;
   kelurahan?: string;
   target?: number;
-  tk_form?: number;  // 💡 AKUISISI
-  tk_rekap?: number; // 💡 TK AKTIF
+  tk_form?: number;  
+  tk_rekap?: number; 
   [key: string]: unknown;
 }
 
@@ -74,7 +73,7 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
           <div className="bg-[#9e9e9e] dark:bg-slate-700 text-black dark:text-white px-3 py-2 flex items-center gap-3 font-bold text-xs">
             <input type="checkbox" className="w-4 h-4 cursor-pointer accent-gray-700 dark:accent-blue-500" checked={isAll} onChange={handleToggleAll} />
             <span className="flex-1">{title} ({selectedCount})</span>
-            <span>AKUISISI</span> {/* 💡 Update Label filter popup */}
+            <span>AKUISISI</span>
           </div>
           
           <div className="p-2 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
@@ -150,23 +149,23 @@ export default function KelurahanTables({
           'Kelurahan': kel,
           'Jumlah Kepling': 0,
           'TARGET': 0,
-          'AKUISISI': 0, // 💡 Kolom Baru
-          'TK AKTIF': 0, // 💡 Kolom Baru
+          'AKUISISI': 0, 
+          'TK AKTIF': 0, 
         });
       }
 
       const kelData = map.get(uniqueKey);
       kelData['Jumlah Kepling'] += 1;
       kelData['TARGET'] += (row.target || 0);
-      kelData['AKUISISI'] += (row.tk_form || 0); // 💡 Akuisisi
-      kelData['TK AKTIF'] += (row.tk_rekap || 0); // 💡 TK Aktif
+      kelData['AKUISISI'] += (row.tk_form || 0); 
+      kelData['TK AKTIF'] += (row.tk_rekap || 0); 
     });
 
     return Array.from(map.values()).map(kelData => {
       const target = kelData['TARGET'];
       const akuisisi = kelData['AKUISISI'];
       const tkAktif = kelData['TK AKTIF'];
-      const gap = akuisisi - target; // 💡 Dihitung berdasar Akuisisi
+      const gap = akuisisi - target; 
       const percent = target > 0 ? (akuisisi / target) * 100 : 0;
       
       const formatNum = (num: number) => new Intl.NumberFormat('id-ID').format(num);
@@ -190,7 +189,6 @@ export default function KelurahanTables({
     return foundKey ? String(row[foundKey]) : '';
   };
 
-  // ⚡ PERBAIKAN: Fungsi parsing yang kebal terhadap angka ribuan
   const parseNum = (val: string) => {
     const num = parseFloat((val || '0').replace(/\./g, '').replace(/,/g, '.'));
     return isNaN(num) ? 0 : num;
@@ -200,11 +198,11 @@ export default function KelurahanTables({
     return parseNum(String(val).replace('%', ''));
   };
 
-  // ⚡ PERBAIKAN: Mengatur batas Hue ke 120 (Hijau) agar warna tidak mentok di Oranye
-  const getDynamicBgColor = (val: string) => {
+  // 💡 KESERAGAMAN WARNA
+  const getSharedColor = (val: string) => {
     const percent = parsePercent(val);
     const hue = Math.max(0, Math.min((percent / 100) * 120, 120)); 
-    return `hsl(${hue}, 85%, 42%)`; // 42% Lightness agar font putih tetap terbaca jelas
+    return `hsl(${hue}, 85%, 42%)`; 
   };
 
   const filteredData = aggregatedData.filter(row => {
@@ -277,7 +275,7 @@ export default function KelurahanTables({
   aggregatedData.forEach(row => {
     const kec = getVal(row, 'Kecamatan').toUpperCase();
     if (!kec) return;
-    kecOptionsMap.set(kec, (kecOptionsMap.get(kec) || 0) + parseNum(getVal(row, 'AKUISISI'))); // Sort filter by Akuisisi
+    kecOptionsMap.set(kec, (kecOptionsMap.get(kec) || 0) + parseNum(getVal(row, 'AKUISISI'))); 
   });
   const kecOptions = Array.from(kecOptionsMap.entries()).map(([label, metric]) => ({label, metric})).sort((a,b) => b.metric - a.metric); 
 
@@ -287,7 +285,7 @@ export default function KelurahanTables({
     const kec = row.Kecamatan;
     const kel = row.Kelurahan;
     const label = (kelKecMap.get(kel)?.size ?? 0) > 1 ? `${kel} (${kec})` : kel;
-    kelOptionsMap.set(label, (kelOptionsMap.get(label) || 0) + parseNum(row['AKUISISI'])); // Sort filter by Akuisisi
+    kelOptionsMap.set(label, (kelOptionsMap.get(label) || 0) + parseNum(row['AKUISISI'])); 
   });
   const kelOptions = Array.from(kelOptionsMap.entries()).map(([label, metric]) => ({label, metric})).sort((a,b) => b.metric - a.metric);
 
@@ -344,7 +342,7 @@ export default function KelurahanTables({
                     <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'AKUISISI')}</td>
                     <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TK AKTIF')}</td>
                     <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'GAP')}</td>
-                    <td className="px-3 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}>
+                    <td className="px-3 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                       {getVal(row, '%')}
                     </td>
                   </tr>
@@ -391,7 +389,7 @@ export default function KelurahanTables({
                    <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'AKUISISI')}</td>
                    <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TK AKTIF')}</td>
                    <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'GAP')}</td>
-                   <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}>
+                   <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                      {getVal(row, '%')}
                    </td>
                 </tr>
@@ -427,7 +425,7 @@ export default function KelurahanTables({
                     <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'AKUISISI')}</td>
                     <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TK AKTIF')}</td>
                     <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'GAP')}</td>
-                    <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}>
+                    <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                       {getVal(row, '%')}
                     </td>
                  </tr>

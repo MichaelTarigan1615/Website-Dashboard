@@ -1,13 +1,12 @@
 "use client";
 import React, { useState, useMemo } from 'react';
 
-// Tipe data terstruktur untuk entitas Kepling
 interface KeplingData {
   kecamatan?: string;
   kelurahan?: string;
   target?: number;
-  tk_form?: number;  // AKUISISI
-  tk_rekap?: number; // TK AKTIF
+  tk_form?: number; 
+  tk_rekap?: number;
   [key: string]: unknown;
 }
 
@@ -78,10 +77,11 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
   
   const parsePercent = (val: string) => parseFloat((val || '0').replace(',', '.').replace('%', ''));
 
-  const getDynamicBgColor = (val: string) => {
+  // 💡 KESERAGAMAN WARNA: Berlaku sama untuk semua tabel
+  const getSharedColor = (val: string) => {
     const percent = parsePercent(val);
-    const hue = Math.max(0, Math.min((percent / 25) * 35, 35));
-    return `hsl(${hue}, 85%, 45%)`; 
+    const hue = Math.max(0, Math.min((percent / 100) * 120, 120)); 
+    return `hsl(${hue}, 85%, 42%)`; 
   };
 
   const handleSort = (key: string) => {
@@ -137,7 +137,6 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
 
   return (
     <div className="flex gap-4 flex-1 w-full h-full">
-      {/* TABEL UTAMA REKAP KECAMATAN */}
       <div className="flex-1 flex flex-col gap-3 relative min-h-full">
         <div className="absolute inset-0 bg-[#f8faeb] dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col gap-3 transition-colors">
           <h2 className="font-bold text-[16px] text-black dark:text-white px-1 flex-none">Rekap Kecamatan</h2>
@@ -150,10 +149,10 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
                     <div className="flex items-center">Kecamatan {getSortIcon('Kecamatan')}</div>
                   </th>
                   <th onClick={() => handleSort('Jumlah Kelurahan')} className="px-1 py-3 w-[75px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
-                    <div className="flex items-center justify-center text-center leading-tight">Jumlah<br/>Kelurahan {getSortIcon('Jumlah Kelurahan')}</div>
+                    <div className="flex items-center justify-center text-center leading-tight">Jml<br/>Kelurahan {getSortIcon('Jumlah Kelurahan')}</div>
                   </th>
                   <th onClick={() => handleSort('Jumlah Kepling')} className="px-1 py-3 w-[75px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
-                    <div className="flex items-center justify-center text-center leading-tight">Jumlah<br/>Kepling {getSortIcon('Jumlah Kepling')}</div>
+                    <div className="flex items-center justify-center text-center leading-tight">Jml<br/>Kepling {getSortIcon('Jumlah Kepling')}</div>
                   </th>
                   <th onClick={() => handleSort('TARGET')} className="px-2 py-3 w-[80px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center justify-center text-center">TARGET {getSortIcon('TARGET')}</div>
@@ -183,7 +182,7 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
                     <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'AKUISISI')}</td>
                     <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TK AKTIF')}</td>
                     <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'GAP')}</td>
-                    <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 truncate" style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}>
+                    <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 truncate" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                       {getVal(row, '%')}
                     </td>
                   </tr>
@@ -194,10 +193,7 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
         </div>
       </div>
 
-      {/* SIDEBAR KANAN */}
-      {/* 💡 SIZING FIX: Kotak sidebar diperlebar ke w-[460px] */}
       <div className="w-[460px] flex flex-col gap-4 shrink-0">
-        {/* TOP 10 KECAMATAN */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
           <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
             <h2 className="font-bold text-[14px] text-black dark:text-white">Top 10 Kecamatan</h2>
@@ -205,7 +201,6 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
           <table className="w-full text-[10px] text-left table-fixed">
             <thead className="bg-[#388e3c] text-white font-bold whitespace-nowrap">
               <tr>
-                {/* 💡 SIZING FIX: Kolom Kecamatan di-expand aman ke w-[120px], No tetap w-[40px] */}
                 <th className="px-2 py-2 w-[40px] text-center">No.</th>
                 <th className="px-2 py-2 w-[120px]">Kecamatan</th>
                 <th className="px-1 py-2 w-[55px] text-center">TARGET</th>
@@ -224,7 +219,7 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'AKUISISI')}</td>
                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TK AKTIF')}</td>
                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'GAP')}</td>
-                  <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 whitespace-nowrap" style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}>
+                  <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 whitespace-nowrap" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                     {getVal(row, '%')}
                   </td>
                 </tr>
@@ -233,7 +228,6 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
           </table>
         </div>
 
-        {/* WORST 10 KECAMATAN */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
           <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
             <h2 className="font-bold text-[14px] text-black dark:text-white">Worst 10 Kecamatan</h2>
@@ -241,7 +235,6 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
           <table className="w-full text-[10px] text-left table-fixed">
             <thead className="bg-[#b71c1c] text-white font-bold whitespace-nowrap">
               <tr>
-                {/* 💡 SIZING FIX: Kolom Kecamatan di-expand aman ke w-[120px], No tetap w-[40px] */}
                 <th className="px-2 py-2 w-[40px] text-center">No.</th>
                 <th className="px-2 py-2 w-[120px]">Kecamatan</th>
                 <th className="px-1 py-2 w-[55px] text-center">TARGET</th>
@@ -260,7 +253,7 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'AKUISISI')}</td>
                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TK AKTIF')}</td>
                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'GAP')}</td>
-                  <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 whitespace-nowrap" style={{ backgroundColor: getDynamicBgColor(getVal(row, '%')) }}>
+                  <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 whitespace-nowrap" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                     {getVal(row, '%')}
                   </td>
                 </tr>

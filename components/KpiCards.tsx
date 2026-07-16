@@ -55,7 +55,6 @@ export default function KpiCards({
   const tkAkuisisi = filteredData.reduce((acc, row) => acc + (row.tk_form || 0), 0);
   const tkAktifRiil = filteredData.reduce((acc, row) => acc + (row.tk_rekap || 0), 0);
   
-  // 💡 PERBAIKAN: Sisa Target & Persentase MURNI hanya membandingkan Kinerja Akuisisi vs Target
   let sisaTarget = tkAkuisisi - target;
   if (sisaTarget > 0) sisaTarget = 0; 
 
@@ -64,12 +63,13 @@ export default function KpiCards({
   const formatNum = (num: number) => num.toLocaleString('id-ID');
   const formatPercent = (num: number) => num.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 
-  // 💡 PERBAIKAN GRAFIK BULAT: Murni menampilkan porsi perbandingan Akuisisi vs Sisa Target
   const pieData = [
     { name: 'BELUM AKTIF', value: Math.abs(sisaTarget) },
     { name: 'AKUISISI', value: tkAkuisisi }
   ];
-  const PIE_COLORS = ['#e84545', '#1681db']; // Merah untuk sisa target, Biru diselaraskan dengan warna Card Akuisisi
+  
+  // 💡 PERBAIKAN WARNA PIE CHART: Merah untuk BELUM AKTIF, Hijau untuk AKUISISI
+  const PIE_COLORS = ['#e84545', '#4caf50']; 
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -91,7 +91,7 @@ export default function KpiCards({
       if (!mapKec.has(key)) mapKec.set(key, { name: key, fullName: key, target: 0, tk_aktif: 0 });
       const item = mapKec.get(key);
       item.target += (row.target || 0);
-      item.tk_aktif += (row.tk_form || 0); // Diubah ke tk_form (Akuisisi)
+      item.tk_aktif += (row.tk_form || 0); 
     });
     aggregatedData = Array.from(mapKec.values());
   } else if (activeTab === 'KEL') {
@@ -104,7 +104,7 @@ export default function KpiCards({
       if (!mapKel.has(label)) mapKel.set(label, { name: label, fullName: label, target: 0, tk_aktif: 0 });
       const item = mapKel.get(label);
       item.target += (row.target || 0);
-      item.tk_aktif += (row.tk_form || 0); // Diubah ke tk_form (Akuisisi)
+      item.tk_aktif += (row.tk_form || 0); 
     });
     aggregatedData = Array.from(mapKel.values());
   } else {
@@ -112,7 +112,7 @@ export default function KpiCards({
       name: `${row.kelurahan} - ${row.lingkungan}`,
       fullName: `Lingkungan ${row.lingkungan}, ${row.kelurahan}`, 
       target: row.target || 0,
-      tk_aktif: row.tk_form || 0 // Diubah ke tk_form (Akuisisi)
+      tk_aktif: row.tk_form || 0 
     }));
   }
 
@@ -163,7 +163,7 @@ export default function KpiCards({
           <p className="text-2xl font-normal mt-1 tracking-tight">{formatNum(target)}</p>
         </div>
         <div className="bg-[#1681db] dark:bg-blue-800 text-white px-3 py-3 rounded-md shadow flex-1 flex flex-col justify-between min-h-[90px] transition-colors">
-          <p className="text-xs font-semibold leading-tight">Akuisisi<br/>2026</p>
+          <p className="text-xs font-semibold leading-tight">Akuisisi<br/>Capaian</p>
           <p className="text-2xl font-normal mt-1 tracking-tight">{formatNum(tkAkuisisi)}</p>
         </div>
         <div className="bg-[#1681db] dark:bg-blue-800 text-white px-3 py-3 rounded-md shadow flex-1 flex flex-col justify-between min-h-[90px] transition-colors">
