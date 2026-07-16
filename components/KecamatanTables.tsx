@@ -149,10 +149,10 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
                     <div className="flex items-center">Kecamatan {getSortIcon('Kecamatan')}</div>
                   </th>
                   <th onClick={() => handleSort('Jumlah Kelurahan')} className="px-1 py-3 w-[75px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
-                    <div className="flex items-center justify-center text-center leading-tight">Jml<br/>Kelurahan {getSortIcon('Jumlah Kelurahan')}</div>
+                    <div className="flex items-center justify-center text-center leading-tight">Jumlah<br/>Kelurahan {getSortIcon('Jumlah Kelurahan')}</div>
                   </th>
                   <th onClick={() => handleSort('Jumlah Kepling')} className="px-1 py-3 w-[75px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
-                    <div className="flex items-center justify-center text-center leading-tight">Jml<br/>Kepling {getSortIcon('Jumlah Kepling')}</div>
+                    <div className="flex items-center justify-center text-center leading-tight">Jumlah<br/>Kepling {getSortIcon('Jumlah Kepling')}</div>
                   </th>
                   <th onClick={() => handleSort('TARGET')} className="px-2 py-3 w-[80px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center justify-center text-center">TARGET {getSortIcon('TARGET')}</div>
