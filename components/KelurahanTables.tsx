@@ -198,7 +198,6 @@ export default function KelurahanTables({
     return parseNum(String(val).replace('%', ''));
   };
 
-  // 💡 KESERAGAMAN WARNA
   const getSharedColor = (val: string) => {
     const percent = parsePercent(val);
     const hue = Math.max(0, Math.min((percent / 100) * 120, 120)); 
@@ -356,7 +355,7 @@ export default function KelurahanTables({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col gap-4">
+      <div className="w-[500px] flex flex-col gap-4 shrink-0">
         <div className="flex gap-4">
           <DataStudioDropdown title="Kecamatan" options={kecOptions} selected={filterKec} onChange={(newSel) => { setFilterKec(newSel); setFilterKel(['ALL']); }} />
           <DataStudioDropdown title="Kelurahan" options={kelOptions} selected={filterKel} onChange={(newSel) => setFilterKel(newSel)} />
@@ -366,30 +365,32 @@ export default function KelurahanTables({
           <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
             <h2 className="font-bold text-[14px] text-black dark:text-white">Top 10 Kelurahan</h2>
           </div>
-          <table className="w-full text-[10px] text-left">
-            <thead className="bg-[#388e3c] text-white font-bold">
+          <table className="w-full text-[10px] text-left table-fixed">
+            <thead className="bg-[#388e3c] text-white font-bold whitespace-nowrap">
               <tr>
-                <th className="px-2 py-2 w-6 text-center">No.</th>
-                <th className="px-2 py-2">Kecamatan</th>
+                {/* 💡 SIZING FIX: Distribusi ulang lebar tabel sidebar */}
+                <th className="px-1 py-2 w-[30px] text-center">No.</th>
+                <th className="px-2 py-2 w-[90px]">Kecamatan</th>
                 <th className="px-2 py-2">Kelurahan</th>
-                <th className="px-2 py-2 text-center uppercase">TARGET</th>
-                <th className="px-2 py-2 text-center uppercase">AKUISISI</th>
-                <th className="px-2 py-2 text-center uppercase">TK AKTIF</th>
-                <th className="px-2 py-2 text-center uppercase">GAP</th>
-                <th className="px-2 py-2 text-center">%</th>
+                <th className="px-1 py-2 w-[45px] text-center uppercase">TARGET</th>
+                <th className="px-1 py-2 w-[50px] text-center uppercase">AKUISISI</th>
+                <th className="px-1 py-2 w-[45px] text-center uppercase leading-tight">TK<br/>AKTIF</th>
+                <th className="px-1 py-2 w-[45px] text-center uppercase">GAP</th>
+                {/* 💡 SIZING FIX: Kolom persen diperlebar menjadi w-[60px] */}
+                <th className="px-1 py-2 w-[60px] text-center">%</th>
               </tr>
             </thead>
             <tbody>
               {top10Data.map((row, index) => (
                 <tr key={index} className="border-b border-gray-100 dark:border-slate-700/50 even:bg-[#eef5e1] dark:even:bg-slate-800/80 odd:bg-white dark:odd:bg-slate-800 hover:bg-green-50 dark:hover:bg-slate-700 transition-colors">
-                   <td className="px-2 py-2 text-center text-gray-500 dark:text-gray-400">{index + 1}.</td>
-                   <td className="px-2 py-2 uppercase font-bold text-gray-800 dark:text-gray-100 truncate max-w-[90px]">{getVal(row, 'Kecamatan')}</td>
-                   <td className="px-2 py-2 uppercase font-medium text-gray-700 dark:text-gray-300 truncate max-w-[110px]">{getVal(row, 'Kelurahan')}</td>
-                   <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TARGET')}</td>
-                   <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'AKUISISI')}</td>
-                   <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TK AKTIF')}</td>
-                   <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'GAP')}</td>
-                   <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
+                   <td className="px-1 py-2 text-center font-bold text-gray-500 dark:text-gray-400 truncate">{index + 1}.</td>
+                   <td className="px-2 py-2 uppercase font-bold text-gray-800 dark:text-gray-100 truncate">{getVal(row, 'Kecamatan')}</td>
+                   <td className="px-2 py-2 uppercase font-medium text-gray-700 dark:text-gray-300 truncate">{getVal(row, 'Kelurahan')}</td>
+                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TARGET')}</td>
+                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'AKUISISI')}</td>
+                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TK AKTIF')}</td>
+                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'GAP')}</td>
+                   <td className="px-1 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 truncate" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                      {getVal(row, '%')}
                    </td>
                 </tr>
@@ -402,30 +403,32 @@ export default function KelurahanTables({
           <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
             <h2 className="font-bold text-[14px] text-black dark:text-white">Worst 10 Kelurahan</h2>
           </div>
-          <table className="w-full text-[10px] text-left">
-            <thead className="bg-[#b71c1c] text-white font-bold">
+          <table className="w-full text-[10px] text-left table-fixed">
+            <thead className="bg-[#b71c1c] text-white font-bold whitespace-nowrap">
               <tr>
-                <th className="px-2 py-2 w-6 text-center">No.</th>
-                <th className="px-2 py-2">Kecamatan</th>
+                <th className="px-1 py-2 w-[30px] text-center">No.</th>
+                <th className="px-2 py-2 w-[90px]">Kecamatan</th>
                 <th className="px-2 py-2">Kelurahan</th>
-                <th className="px-2 py-2 text-center uppercase">TARGET</th>
-                <th className="px-2 py-2 text-center uppercase">AKUISISI</th>
-                <th className="px-2 py-2 text-center uppercase">TK AKTIF</th>
-                <th className="px-2 py-2 text-center uppercase">GAP</th>
-                <th className="px-2 py-2 text-center">%</th>
+                <th className="px-1 py-2 w-[45px] text-center uppercase">TARGET</th>
+                <th className="px-1 py-2 w-[50px] text-center uppercase">AKUISISI</th>
+                <th className="px-1 py-2 w-[45px] text-center uppercase leading-tight">TK<br/>AKTIF</th>
+                <th className="px-1 py-2 w-[45px] text-center uppercase">GAP</th>
+                {/* 💡 SIZING FIX: Kolom persen diperlebar menjadi w-[60px] */}
+                <th className="px-1 py-2 w-[60px] text-center">%</th>
               </tr>
             </thead>
             <tbody>
+               {/* 💡 COLOR FIX: Komentar ini sudah dipindah ke posisi yang tepat */}
                {worst10Data.map((row, index) => (
-                 <tr key={index} className="border-b border-gray-100 dark:border-slate-700/50 even:bg-[#eef5e1] dark:even:bg-slate-800/80 odd:bg-white dark:odd:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
-                    <td className="px-2 py-2 text-center text-gray-500 dark:text-gray-400">{index + 1}.</td>
-                    <td className="px-2 py-2 uppercase font-bold text-gray-800 dark:text-gray-100 truncate max-w-[90px]">{getVal(row, 'Kecamatan')}</td>
-                    <td className="px-2 py-2 uppercase font-medium text-gray-700 dark:text-gray-300 truncate max-w-[110px]">{getVal(row, 'Kelurahan')}</td>
-                    <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TARGET')}</td>
-                    <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'AKUISISI')}</td>
-                    <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TK AKTIF')}</td>
-                    <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'GAP')}</td>
-                    <td className="px-2 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
+                 <tr key={index} className="border-b border-gray-100 dark:border-slate-700/50 even:bg-red-50 dark:even:bg-slate-800/80 odd:bg-white dark:odd:bg-slate-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                    <td className="px-1 py-2 text-center font-bold text-gray-500 dark:text-gray-400 truncate">{index + 1}.</td>
+                    <td className="px-2 py-2 uppercase font-bold text-gray-800 dark:text-gray-100 truncate">{getVal(row, 'Kecamatan')}</td>
+                    <td className="px-2 py-2 uppercase font-medium text-gray-700 dark:text-gray-300 truncate">{getVal(row, 'Kelurahan')}</td>
+                    <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TARGET')}</td>
+                    <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'AKUISISI')}</td>
+                    <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TK AKTIF')}</td>
+                    <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'GAP')}</td>
+                    <td className="px-1 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 truncate" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
                       {getVal(row, '%')}
                     </td>
                  </tr>

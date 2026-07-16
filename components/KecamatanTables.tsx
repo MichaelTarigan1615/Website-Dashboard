@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useMemo } from 'react';
 
+// Tipe data terstruktur untuk entitas Kepling
 interface KeplingData {
   kecamatan?: string;
   kelurahan?: string;
   target?: number;
-  tk_form?: number; 
-  tk_rekap?: number;
+  tk_form?: number;  // AKUISISI
+  tk_rekap?: number; // TK AKTIF
   [key: string]: unknown;
 }
 
@@ -77,7 +78,6 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
   
   const parsePercent = (val: string) => parseFloat((val || '0').replace(',', '.').replace('%', ''));
 
-  // 💡 KESERAGAMAN WARNA: Berlaku sama untuk semua tabel
   const getSharedColor = (val: string) => {
     const percent = parsePercent(val);
     const hue = Math.max(0, Math.min((percent / 100) * 120, 120)); 
@@ -137,6 +137,7 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
 
   return (
     <div className="flex gap-4 flex-1 w-full h-full">
+      {/* TABEL UTAMA REKAP KECAMATAN */}
       <div className="flex-1 flex flex-col gap-3 relative min-h-full">
         <div className="absolute inset-0 bg-[#f8faeb] dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col gap-3 transition-colors">
           <h2 className="font-bold text-[16px] text-black dark:text-white px-1 flex-none">Rekap Kecamatan</h2>
@@ -145,13 +146,13 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
               <thead className="bg-[#1b75d8] text-white font-bold sticky top-0 shadow-sm z-10 whitespace-nowrap">
                 <tr>
                   <th className="px-2 py-3 w-[35px] text-center border-r border-blue-600/30">No.</th>
-                  <th onClick={() => handleSort('Kecamatan')} className="px-3 py-3 w-[130px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                  <th onClick={() => handleSort('Kecamatan')} className="px-3 py-3 w-[150px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center">Kecamatan {getSortIcon('Kecamatan')}</div>
                   </th>
-                  <th onClick={() => handleSort('Jumlah Kelurahan')} className="px-1 py-3 w-[75px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                  <th onClick={() => handleSort('Jumlah Kelurahan')} className="px-1 py-3 w-[70px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center justify-center text-center leading-tight">Jumlah<br/>Kelurahan {getSortIcon('Jumlah Kelurahan')}</div>
                   </th>
-                  <th onClick={() => handleSort('Jumlah Kepling')} className="px-1 py-3 w-[75px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                  <th onClick={() => handleSort('Jumlah Kepling')} className="px-1 py-3 w-[70px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center justify-center text-center leading-tight">Jumlah<br/>Kepling {getSortIcon('Jumlah Kepling')}</div>
                   </th>
                   <th onClick={() => handleSort('TARGET')} className="px-2 py-3 w-[80px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
@@ -193,7 +194,10 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
         </div>
       </div>
 
-      <div className="w-[460px] flex flex-col gap-4 shrink-0">
+      {/* SIDEBAR KANAN */}
+      {/* 💡 SIZING FIX: Lebar total sidebar disesuaikan sedikit ke w-[470px] */}
+      <div className="w-[470px] flex flex-col gap-4 shrink-0">
+        {/* TOP 10 KECAMATAN */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
           <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
             <h2 className="font-bold text-[14px] text-black dark:text-white">Top 10 Kecamatan</h2>
@@ -201,13 +205,14 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
           <table className="w-full text-[10px] text-left table-fixed">
             <thead className="bg-[#388e3c] text-white font-bold whitespace-nowrap">
               <tr>
+                {/* 💡 SIZING FIX: Kolom Kecamatan diperlebar aman ke w-[125px] agar nama panjang di Top & Worst tidak patah */}
                 <th className="px-2 py-2 w-[40px] text-center">No.</th>
-                <th className="px-2 py-2 w-[120px]">Kecamatan</th>
-                <th className="px-1 py-2 w-[55px] text-center">TARGET</th>
+                <th className="px-2 py-2 w-[125px]">Kecamatan</th>
+                <th className="px-1 py-2 w-[50px] text-center">TARGET</th>
                 <th className="px-1 py-2 w-[65px] text-center">AKUISISI</th>
                 <th className="px-1 py-2 w-[55px] text-center leading-tight">TK<br/>AKTIF</th>
-                <th className="px-1 py-2 w-[55px] text-center">GAP</th>
-                <th className="px-2 py-2 w-[70px] text-center">%</th>
+                <th className="px-1 py-2 w-[50px] text-center">GAP</th>
+                <th className="px-2 py-2 w-[65px] text-center">%</th>
               </tr>
             </thead>
             <tbody>
@@ -228,6 +233,7 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
           </table>
         </div>
 
+        {/* WORST 10 KECAMATAN */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
           <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
             <h2 className="font-bold text-[14px] text-black dark:text-white">Worst 10 Kecamatan</h2>
@@ -235,13 +241,14 @@ export default function KecamatanTables({ data = [] }: { data?: KeplingData[] })
           <table className="w-full text-[10px] text-left table-fixed">
             <thead className="bg-[#b71c1c] text-white font-bold whitespace-nowrap">
               <tr>
+                {/* 💡 SIZING FIX: Kolom Kecamatan disamakan ke w-[125px] agar seimbang dan rapi */}
                 <th className="px-2 py-2 w-[40px] text-center">No.</th>
-                <th className="px-2 py-2 w-[120px]">Kecamatan</th>
-                <th className="px-1 py-2 w-[55px] text-center">TARGET</th>
+                <th className="px-2 py-2 w-[125px]">Kecamatan</th>
+                <th className="px-1 py-2 w-[50px] text-center">TARGET</th>
                 <th className="px-1 py-2 w-[65px] text-center">AKUISISI</th>
                 <th className="px-1 py-2 w-[55px] text-center leading-tight">TK<br/>AKTIF</th>
-                <th className="px-1 py-2 w-[55px] text-center">GAP</th>
-                <th className="px-2 py-2 w-[70px] text-center">%</th>
+                <th className="px-1 py-2 w-[50px] text-center">GAP</th>
+                <th className="px-2 py-2 w-[65px] text-center">%</th>
               </tr>
             </thead>
             <tbody>
