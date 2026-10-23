@@ -116,10 +116,23 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#f3f4ec] dark:bg-[#0f172a] font-sans">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1b75d8] dark:border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-700 dark:text-gray-300 font-semibold text-lg tracking-wide">Menghubungkan Server TiDB Cloud...</p>
+      <div className="flex h-screen items-center justify-center bg-[#f3f4ec] dark:bg-[#0f172a] font-sans transition-colors duration-300">
+        <div className="flex flex-col items-center">
+          <div className="relative w-20 h-20 mb-6">
+            {/* Lingkaran Luar (Statis) */}
+            <div className="absolute inset-0 rounded-full border-4 border-slate-300 dark:border-slate-700"></div>
+            {/* Lingkaran Tengah (Berputar) */}
+            <div className="absolute inset-0 rounded-full border-4 border-[#1b75d8] dark:border-blue-500 border-t-transparent animate-spin"></div>
+            {/* Titik Tengah (Berkedip) */}
+            <div className="absolute inset-6 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)] dark:shadow-[0_0_15px_rgba(16,185,129,0.3)]"></div>
+          </div>
+          
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 tracking-wide animate-pulse">
+            Menghubungkan Server
+          </h2>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
+            Memuat data kepesertaan UCJ 2026...
+          </p>
         </div>
       </div>
     );
