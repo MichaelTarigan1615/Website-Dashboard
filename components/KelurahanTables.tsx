@@ -5,8 +5,7 @@ interface KeplingData {
   kecamatan?: string;
   kelurahan?: string;
   target?: number;
-  tk_form?: number;  
-  tk_rekap?: number; 
+  tk_rekap?: number; // TK AKTIF
   [key: string]: unknown;
 }
 
@@ -73,7 +72,7 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
           <div className="bg-[#9e9e9e] dark:bg-slate-700 text-black dark:text-white px-3 py-2 flex items-center gap-3 font-bold text-xs">
             <input type="checkbox" className="w-4 h-4 cursor-pointer accent-gray-700 dark:accent-blue-500" checked={isAll} onChange={handleToggleAll} />
             <span className="flex-1">{title} ({selectedCount})</span>
-            <span>AKUISISI</span>
+            <span>TK AKTIF</span>
           </div>
           
           <div className="p-2 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
@@ -149,7 +148,6 @@ export default function KelurahanTables({
           'Kelurahan': kel,
           'Jumlah Kepling': 0,
           'TARGET': 0,
-          'AKUISISI': 0, 
           'TK AKTIF': 0, 
         });
       }
@@ -157,16 +155,16 @@ export default function KelurahanTables({
       const kelData = map.get(uniqueKey);
       kelData['Jumlah Kepling'] += 1;
       kelData['TARGET'] += (row.target || 0);
-      kelData['AKUISISI'] += (row.tk_form || 0); 
       kelData['TK AKTIF'] += (row.tk_rekap || 0); 
     });
 
     return Array.from(map.values()).map(kelData => {
       const target = kelData['TARGET'];
-      const akuisisi = kelData['AKUISISI'];
       const tkAktif = kelData['TK AKTIF'];
-      const gap = akuisisi - target; 
-      const percent = target > 0 ? (akuisisi / target) * 100 : 0;
+      
+      // LOGIKA BARU: GAP dan % murni menggunakan TK AKTIF
+      const gap = tkAktif - target; 
+      const percent = target > 0 ? (tkAktif / target) * 100 : 0;
       
       const formatNum = (num: number) => new Intl.NumberFormat('id-ID').format(num);
       const formatPerc = (num: number) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + '%';
@@ -176,7 +174,6 @@ export default function KelurahanTables({
         'Kelurahan': kelData['Kelurahan'],
         'Jumlah Kepling': formatNum(kelData['Jumlah Kepling']),
         'TARGET': formatNum(target),
-        'AKUISISI': formatNum(akuisisi),
         'TK AKTIF': formatNum(tkAktif),
         'GAP': formatNum(gap),
         '%': formatPerc(percent)
@@ -274,7 +271,8 @@ export default function KelurahanTables({
   aggregatedData.forEach(row => {
     const kec = getVal(row, 'Kecamatan').toUpperCase();
     if (!kec) return;
-    kecOptionsMap.set(kec, (kecOptionsMap.get(kec) || 0) + parseNum(getVal(row, 'AKUISISI'))); 
+    // Menggunakan TK AKTIF untuk metrik di dropdown
+    kecOptionsMap.set(kec, (kecOptionsMap.get(kec) || 0) + parseNum(getVal(row, 'TK AKTIF'))); 
   });
   const kecOptions = Array.from(kecOptionsMap.entries()).map(([label, metric]) => ({label, metric})).sort((a,b) => b.metric - a.metric); 
 
@@ -284,7 +282,8 @@ export default function KelurahanTables({
     const kec = row.Kecamatan;
     const kel = row.Kelurahan;
     const label = (kelKecMap.get(kel)?.size ?? 0) > 1 ? `${kel} (${kec})` : kel;
-    kelOptionsMap.set(label, (kelOptionsMap.get(label) || 0) + parseNum(row['AKUISISI'])); 
+    // Menggunakan TK AKTIF untuk metrik di dropdown
+    kelOptionsMap.set(label, (kelOptionsMap.get(label) || 0) + parseNum(row['TK AKTIF'])); 
   });
   const kelOptions = Array.from(kelOptionsMap.entries()).map(([label, metric]) => ({label, metric})).sort((a,b) => b.metric - a.metric);
 
@@ -303,29 +302,26 @@ export default function KelurahanTables({
             <table className="w-full text-[11px] text-left">
               <thead className="bg-[#1b75d8] text-white font-bold sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th className="px-3 py-3 w-8 text-center border-r border-blue-600/30">No.</th>
+                  <th className="px-3 py-3 w-10 text-center border-r border-blue-600/30">No.</th>
                   <th onClick={() => handleSort('Kecamatan')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center">Kecamatan {getSortIcon('Kecamatan')}</div>
                   </th>
                   <th onClick={() => handleSort('Kelurahan')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center">Kelurahan {getSortIcon('Kelurahan')}</div>
                   </th>
-                  <th onClick={() => handleSort('Jumlah Kepling')} className="px-2 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                  <th onClick={() => handleSort('Jumlah Kepling')} className="px-2 py-3 w-[80px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center justify-center text-center leading-tight">Jumlah<br/>Kepling {getSortIcon('Jumlah Kepling')}</div>
                   </th>
-                  <th onClick={() => handleSort('TARGET')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                  <th onClick={() => handleSort('TARGET')} className="px-3 py-3 w-[90px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center justify-center text-center">TARGET {getSortIcon('TARGET')}</div>
                   </th>
-                  <th onClick={() => handleSort('AKUISISI')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
-                    <div className="flex items-center justify-center text-center uppercase">AKUISISI {getSortIcon('AKUISISI')}</div>
-                  </th>
-                  <th onClick={() => handleSort('TK AKTIF')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                  <th onClick={() => handleSort('TK AKTIF')} className="px-3 py-3 w-[90px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center justify-center text-center uppercase">TK AKTIF {getSortIcon('TK AKTIF')}</div>
                   </th>
-                  <th onClick={() => handleSort('GAP')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
+                  <th onClick={() => handleSort('GAP')} className="px-3 py-3 w-[90px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none border-r border-blue-600/30">
                     <div className="flex items-center justify-center text-center uppercase">GAP {getSortIcon('GAP')}</div>
                   </th>
-                  <th onClick={() => handleSort('%')} className="px-3 py-3 cursor-pointer group hover:bg-[#1565c0] transition-colors select-none">
+                  <th onClick={() => handleSort('%')} className="px-3 py-3 w-[80px] cursor-pointer group hover:bg-[#1565c0] transition-colors select-none">
                     <div className="flex items-center justify-center text-center">% {getSortIcon('%')}</div>
                   </th>
                 </tr>
@@ -338,7 +334,6 @@ export default function KelurahanTables({
                     <td className="px-3 py-2 uppercase font-medium text-gray-700 dark:text-gray-300">{getVal(row, 'Kelurahan')}</td>
                     <td className="px-2 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'Jumlah Kepling')}</td>
                     <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TARGET')}</td>
-                    <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'AKUISISI')}</td>
                     <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'TK AKTIF')}</td>
                     <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{getVal(row, 'GAP')}</td>
                     <td className="px-3 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
@@ -347,7 +342,7 @@ export default function KelurahanTables({
                   </tr>
                 ))}
                 {displayData.length === 0 && (
-                  <tr><td colSpan={9} className="text-center py-10 text-gray-400 dark:text-gray-500 font-bold">Data tidak ditemukan</td></tr>
+                  <tr><td colSpan={8} className="text-center py-10 text-gray-400 dark:text-gray-500 font-bold">Data tidak ditemukan</td></tr>
                 )}
               </tbody>
             </table>
@@ -361,6 +356,7 @@ export default function KelurahanTables({
           <DataStudioDropdown title="Kelurahan" options={kelOptions} selected={filterKel} onChange={(newSel) => setFilterKel(newSel)} />
         </div>
 
+        {/* TOP 10 KELURAHAN */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col transition-colors">
           <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
             <h2 className="font-bold text-[14px] text-black dark:text-white">Top 10 Kelurahan</h2>
@@ -368,15 +364,12 @@ export default function KelurahanTables({
           <table className="w-full text-[10px] text-left table-fixed">
             <thead className="bg-[#388e3c] text-white font-bold whitespace-nowrap">
               <tr>
-                {/* 💡 SIZING FIX: Distribusi ulang lebar tabel sidebar */}
-                <th className="px-1 py-2 w-[30px] text-center">No.</th>
-                <th className="px-2 py-2 w-[90px]">Kecamatan</th>
+                <th className="px-1 py-2 w-[35px] text-center">No.</th>
+                <th className="px-2 py-2 w-[110px]">Kecamatan</th>
                 <th className="px-2 py-2">Kelurahan</th>
-                <th className="px-1 py-2 w-[45px] text-center uppercase">TARGET</th>
-                <th className="px-1 py-2 w-[50px] text-center uppercase">AKUISISI</th>
-                <th className="px-1 py-2 w-[45px] text-center uppercase leading-tight">TK<br/>AKTIF</th>
-                <th className="px-1 py-2 w-[45px] text-center uppercase">GAP</th>
-                {/* 💡 SIZING FIX: Kolom persen diperlebar menjadi w-[60px] */}
+                <th className="px-1 py-2 w-[60px] text-center uppercase">TARGET</th>
+                <th className="px-1 py-2 w-[60px] text-center uppercase leading-tight">TK<br/>AKTIF</th>
+                <th className="px-1 py-2 w-[55px] text-center uppercase">GAP</th>
                 <th className="px-1 py-2 w-[60px] text-center">%</th>
               </tr>
             </thead>
@@ -387,7 +380,6 @@ export default function KelurahanTables({
                    <td className="px-2 py-2 uppercase font-bold text-gray-800 dark:text-gray-100 truncate">{getVal(row, 'Kecamatan')}</td>
                    <td className="px-2 py-2 uppercase font-medium text-gray-700 dark:text-gray-300 truncate">{getVal(row, 'Kelurahan')}</td>
                    <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TARGET')}</td>
-                   <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'AKUISISI')}</td>
                    <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TK AKTIF')}</td>
                    <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'GAP')}</td>
                    <td className="px-1 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 truncate" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>
@@ -399,6 +391,7 @@ export default function KelurahanTables({
           </table>
         </div>
 
+        {/* WORST 10 KELURAHAN */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col transition-colors">
           <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
             <h2 className="font-bold text-[14px] text-black dark:text-white">Worst 10 Kelurahan</h2>
@@ -406,26 +399,22 @@ export default function KelurahanTables({
           <table className="w-full text-[10px] text-left table-fixed">
             <thead className="bg-[#b71c1c] text-white font-bold whitespace-nowrap">
               <tr>
-                <th className="px-1 py-2 w-[30px] text-center">No.</th>
-                <th className="px-2 py-2 w-[90px]">Kecamatan</th>
+                <th className="px-1 py-2 w-[35px] text-center">No.</th>
+                <th className="px-2 py-2 w-[110px]">Kecamatan</th>
                 <th className="px-2 py-2">Kelurahan</th>
-                <th className="px-1 py-2 w-[45px] text-center uppercase">TARGET</th>
-                <th className="px-1 py-2 w-[50px] text-center uppercase">AKUISISI</th>
-                <th className="px-1 py-2 w-[45px] text-center uppercase leading-tight">TK<br/>AKTIF</th>
-                <th className="px-1 py-2 w-[45px] text-center uppercase">GAP</th>
-                {/* 💡 SIZING FIX: Kolom persen diperlebar menjadi w-[60px] */}
+                <th className="px-1 py-2 w-[60px] text-center uppercase">TARGET</th>
+                <th className="px-1 py-2 w-[60px] text-center uppercase leading-tight">TK<br/>AKTIF</th>
+                <th className="px-1 py-2 w-[55px] text-center uppercase">GAP</th>
                 <th className="px-1 py-2 w-[60px] text-center">%</th>
               </tr>
             </thead>
             <tbody>
-               {/* 💡 COLOR FIX: Komentar ini sudah dipindah ke posisi yang tepat */}
                {worst10Data.map((row, index) => (
                  <tr key={index} className="border-b border-gray-100 dark:border-slate-700/50 even:bg-red-50 dark:even:bg-slate-800/80 odd:bg-white dark:odd:bg-slate-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
                     <td className="px-1 py-2 text-center font-bold text-gray-500 dark:text-gray-400 truncate">{index + 1}.</td>
                     <td className="px-2 py-2 uppercase font-bold text-gray-800 dark:text-gray-100 truncate">{getVal(row, 'Kecamatan')}</td>
                     <td className="px-2 py-2 uppercase font-medium text-gray-700 dark:text-gray-300 truncate">{getVal(row, 'Kelurahan')}</td>
                     <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TARGET')}</td>
-                    <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'AKUISISI')}</td>
                     <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'TK AKTIF')}</td>
                     <td className="px-1 py-2 text-center text-gray-600 dark:text-gray-400 truncate">{getVal(row, 'GAP')}</td>
                     <td className="px-1 py-2 text-center font-bold text-white border-l border-white/20 dark:border-slate-900/20 truncate" style={{ backgroundColor: getSharedColor(getVal(row, '%')) }}>

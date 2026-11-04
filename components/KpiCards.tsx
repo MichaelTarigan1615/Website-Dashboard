@@ -52,23 +52,22 @@ export default function KpiCards({
   const jmlKepling = filteredData.length;
 
   const target = filteredData.reduce((acc, row) => acc + (row.target || 0), 0);
-  const tkAkuisisi = filteredData.reduce((acc, row) => acc + (row.tk_form || 0), 0);
   const tkAktifRiil = filteredData.reduce((acc, row) => acc + (row.tk_rekap || 0), 0);
   
-  let sisaTarget = tkAkuisisi - target;
+  // Sisa Target dihitung langsung terhadap TK Aktif
+  let sisaTarget = tkAktifRiil - target;
   if (sisaTarget > 0) sisaTarget = 0; 
 
-  const percentTkAktif = target > 0 ? (tkAkuisisi / target) * 100 : 0;
+  const percentTkAktif = target > 0 ? (tkAktifRiil / target) * 100 : 0;
 
   const formatNum = (num: number) => num.toLocaleString('id-ID');
   const formatPercent = (num: number) => num.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 
   const pieData = [
-    { name: 'BELUM AKTIF', value: Math.abs(sisaTarget) },
-    { name: 'AKUISISI', value: tkAkuisisi }
+    { name: 'BELUM TERCAPAI', value: Math.abs(sisaTarget) },
+    { name: 'TK AKTIF', value: tkAktifRiil }
   ];
   
-  // 💡 PERBAIKAN WARNA PIE CHART: Merah untuk BELUM AKTIF, Hijau untuk AKUISISI
   const PIE_COLORS = ['#e84545', '#4caf50']; 
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
@@ -91,7 +90,7 @@ export default function KpiCards({
       if (!mapKec.has(key)) mapKec.set(key, { name: key, fullName: key, target: 0, tk_aktif: 0 });
       const item = mapKec.get(key);
       item.target += (row.target || 0);
-      item.tk_aktif += (row.tk_form || 0); 
+      item.tk_aktif += (row.tk_rekap || 0); 
     });
     aggregatedData = Array.from(mapKec.values());
   } else if (activeTab === 'KEL') {
@@ -104,7 +103,7 @@ export default function KpiCards({
       if (!mapKel.has(label)) mapKel.set(label, { name: label, fullName: label, target: 0, tk_aktif: 0 });
       const item = mapKel.get(label);
       item.target += (row.target || 0);
-      item.tk_aktif += (row.tk_form || 0); 
+      item.tk_aktif += (row.tk_rekap || 0); 
     });
     aggregatedData = Array.from(mapKel.values());
   } else {
@@ -112,7 +111,7 @@ export default function KpiCards({
       name: `${row.kelurahan} - ${row.lingkungan}`,
       fullName: `Lingkungan ${row.lingkungan}, ${row.kelurahan}`, 
       target: row.target || 0,
-      tk_aktif: row.tk_form || 0 
+      tk_aktif: row.tk_rekap || 0 
     }));
   }
 
@@ -135,7 +134,7 @@ export default function KpiCards({
     return {
       name: nama,
       fullName: row.fullName, 
-      'AKUISISI': row.tk_aktif,
+      'TK AKTIF': row.tk_aktif,
       'TARGET': row.target
     };
   });
@@ -158,14 +157,11 @@ export default function KpiCards({
       </div>
 
       <div className="flex gap-2 shrink-0">
-        <div className="bg-[#1681db] dark:bg-blue-800 text-white px-3 py-3 rounded-md shadow flex-[1.2] flex flex-col justify-between min-h-[90px] transition-colors">
+        <div className="bg-[#1681db] dark:bg-blue-800 text-white px-3 py-3 rounded-md shadow flex-1 flex flex-col justify-between min-h-[90px] transition-colors">
           <p className="text-xs font-semibold leading-tight">Target<br/>(50 x Kepling)</p>
           <p className="text-2xl font-normal mt-1 tracking-tight">{formatNum(target)}</p>
         </div>
-        <div className="bg-[#1681db] dark:bg-blue-800 text-white px-3 py-3 rounded-md shadow flex-1 flex flex-col justify-between min-h-[90px] transition-colors">
-          <p className="text-xs font-semibold leading-tight">Akuisisi<br/>Capaian</p>
-          <p className="text-2xl font-normal mt-1 tracking-tight">{formatNum(tkAkuisisi)}</p>
-        </div>
+        {/* Kotak Akuisisi Dihapus, Kotak TK Aktif mengambil ruang tersisa */}
         <div className="bg-[#1681db] dark:bg-blue-800 text-white px-3 py-3 rounded-md shadow flex-1 flex flex-col justify-between min-h-[90px] transition-colors">
           <p className="text-xs font-semibold leading-tight">TK<br/>Aktif</p>
           <p className="text-2xl font-normal mt-1 tracking-tight">{formatNum(tkAktifRiil)}</p>
@@ -220,7 +216,8 @@ export default function KpiCards({
                 }}
               />
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px', color: isDarkMode ? '#cbd5e1' : '#333' }} />
-              <Bar dataKey="AKUISISI" fill={isDarkMode ? "#3b82f6" : "#1681db"} barSize={8} radius={[0, 2, 2, 0]} />
+              {/* Warna TK AKTIF diubah menjadi warna hijau senada PIE CHART */}
+              <Bar dataKey="TK AKTIF" fill={isDarkMode ? "#4caf50" : "#4caf50"} barSize={8} radius={[0, 2, 2, 0]} />
               <Bar dataKey="TARGET" fill={isDarkMode ? "#06b6d4" : "#00bcd4"} barSize={8} radius={[0, 2, 2, 0]} />
             </BarChart>
           ) : (
@@ -240,7 +237,8 @@ export default function KpiCards({
                 }}
               />
               <Legend verticalAlign="top" iconType="square" wrapperStyle={{ fontSize: '10px', marginTop: '-10px', color: isDarkMode ? '#cbd5e1' : '#333' }} />
-              <Bar dataKey="AKUISISI" fill={isDarkMode ? "#3b82f6" : "#1681db"} barSize={12} radius={[2, 2, 0, 0]} />
+              {/* Warna TK AKTIF diubah menjadi warna hijau senada PIE CHART */}
+              <Bar dataKey="TK AKTIF" fill={isDarkMode ? "#4caf50" : "#4caf50"} barSize={12} radius={[2, 2, 0, 0]} />
               <Bar dataKey="TARGET" fill={isDarkMode ? "#06b6d4" : "#00bcd4"} barSize={12} radius={[2, 2, 0, 0]} />
             </BarChart>
           )}
