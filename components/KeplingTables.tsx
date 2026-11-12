@@ -43,7 +43,7 @@ const DataStudioDropdown = ({ title, options, selected, onChange }: {
 
   return (
     <div className="relative w-64" ref={dropdownRef}>
-      <div className="px-4 py-3 text-sm border border-gray-300 dark:border-slate-600 rounded shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 flex justify-between items-center cursor-pointer font-medium transition-colors" onClick={() => setIsOpen(!isOpen)}>
+      <div className="px-4 py-2.5 text-sm border border-gray-300 dark:border-slate-600 rounded shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 flex justify-between items-center cursor-pointer font-medium transition-colors" onClick={() => setIsOpen(!isOpen)}>
         <span>{title} {selectedCount < options.length ? `(${selectedCount})` : ''}</span>
         <span className="text-[10px]">▼</span>
       </div>
@@ -92,6 +92,9 @@ export default function KeplingTables({
   filterKel: string[], setFilterKel: (v: string[]) => void
 }) {
   const [expandedKepling, setExpandedKepling] = useState<string | null>(null);
+  
+  // 💡 STATE BARU: Menyimpan kriteria pengurutan
+  const [sortBy, setSortBy] = useState<'%' | 'TK AKTIF'>('%'); 
   const isRekapLoading = rekapData.length === 0;
 
   const kelKecMap = useMemo(() => {
@@ -114,7 +117,6 @@ export default function KeplingTables({
       const target = row.target || 0;
       const tkAktif = row.tk_rekap || 0;  
       
-      // LOGIKA BARU: Murni menggunakan TK AKTIF
       const gap = tkAktif - target;     
       const percent = target > 0 ? (tkAktif / target) * 100 : 0;
       
@@ -147,7 +149,7 @@ export default function KeplingTables({
     return foundKey ? row[foundKey] : '';
   };
 
-  const parsePercent = (val: string) => parseFloat((val || '0').replace(',', '.').replace('%', ''));
+  const parsePercent = (val: string) => parseFloat((val || '0').replace(/\./g, '').replace(',', '.').replace('%', ''));
   const parseNum = (val: string) => {
     const num = parseFloat((val || '0').replace(/\./g, '').replace(',', '.'));
     return isNaN(num) ? 0 : num;
@@ -186,8 +188,22 @@ export default function KeplingTables({
     return matchKec && matchKel;
   });
 
-  const sortedDataDesc = [...filteredData].sort((a, b) => parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%')));
-  const sortedDataAsc = [...filteredData].sort((a, b) => parsePercent(getVal(a, '%')) - parsePercent(getVal(b, '%')));
+  // 💡 LOGIKA BARU PENGURUTAN: Dinamis berdasarkan state 'sortBy'
+  const sortedDataDesc = [...filteredData].sort((a, b) => {
+    if (sortBy === '%') {
+      return parsePercent(getVal(b, '%')) - parsePercent(getVal(a, '%'));
+    } else {
+      return parseNum(getVal(b, 'TK AKTIF')) - parseNum(getVal(a, 'TK AKTIF'));
+    }
+  });
+
+  const sortedDataAsc = [...filteredData].sort((a, b) => {
+    if (sortBy === '%') {
+      return parsePercent(getVal(a, '%')) - parsePercent(getVal(b, '%'));
+    } else {
+      return parseNum(getVal(a, 'TK AKTIF')) - parseNum(getVal(b, 'TK AKTIF'));
+    }
+  });
 
   const top200Data = sortedDataDesc.slice(0, 200);
   const worst200Data = sortedDataAsc.slice(0, 200);
@@ -195,7 +211,6 @@ export default function KeplingTables({
   const renderDetailPeserta = (keplingName: string) => {
     if (expandedKepling !== keplingName) return null;
     
-    // FILTER: Hanya ambil peserta dari kepling ini DAN statusnya 'AKTIF'
     const pesertaDetail = rekapData.filter(
       r => getVal(r, 'Wilayah').trim().toUpperCase() === keplingName.trim().toUpperCase() &&
            (getVal(r, 'Status TK') || "").trim().toUpperCase() === 'AKTIF'
@@ -203,9 +218,9 @@ export default function KeplingTables({
 
     return (
       <tr className="bg-blue-50 dark:bg-slate-800/80 shadow-inner">
-        {/* colspan diubah dari 7 ke 6 karena kolom AKUISISI dihilangkan */}
         <td colSpan={6} className="p-4 border-b border-blue-200 dark:border-slate-700">
-          <div className="bg-white dark:bg-slate-900 rounded-md border border-blue-300 dark:border-slate-600 shadow-sm overflow-hidden max-h-[300px] flex flex-col w-full">
+          {/* 💡 LEBAR TABEL DIPERLUAS MENJADI 95% */}
+          <div className="bg-white dark:bg-slate-900 rounded-md border border-blue-300 dark:border-slate-600 shadow-sm overflow-hidden max-h-[300px] flex flex-col w-[95%] mx-auto">
             <div className="px-3 py-2 bg-[#e3f2fd] dark:bg-slate-800 border-b border-blue-200 dark:border-slate-700 flex justify-between items-center">
               <span className="text-xs font-bold text-[#1565c0] dark:text-blue-300">Daftar Peserta Aktif: {keplingName}</span>
               {!isRekapLoading && (
@@ -218,8 +233,9 @@ export default function KeplingTables({
               <table className="w-full text-[10px] text-left">
                 <thead className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-bold sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 w-10 text-center border-b border-gray-200 dark:border-slate-700">No.</th>
-                    <th className="px-3 py-2 border-b border-gray-200 dark:border-slate-700 w-32">NIK</th>
+                    <th className="px-3 py-2 w-12 text-center border-b border-gray-200 dark:border-slate-700">No.</th>
+                    {/* 💡 LEBAR NIK DIPERLUAS MENJADI w-48 */}
+                    <th className="px-3 py-2 border-b border-gray-200 dark:border-slate-700 w-48">NIK</th>
                     <th className="px-3 py-2 border-b border-gray-200 dark:border-slate-700">Nama TK</th>
                   </tr>
                 </thead>
@@ -256,15 +272,44 @@ export default function KeplingTables({
 
   return (
     <div className="flex flex-col gap-4 w-full h-full">
-      <div className="flex justify-center gap-4 bg-[#f8faeb] dark:bg-slate-900 p-3 rounded-xl border border-green-100 dark:border-slate-700 shadow-sm transition-colors">
-        <DataStudioDropdown title="Kecamatan" options={kecOptions} selected={filterKec} onChange={(newSel) => { setFilterKec(newSel); setFilterKel(['ALL']); }} />
-        <DataStudioDropdown title="Kelurahan" options={kelOptions} selected={filterKel} onChange={(newSel) => setFilterKel(newSel)} />
+      
+      {/* 💡 AREA KONTROL: Dropdown Filter & Tombol Urutkan */}
+      <div className="flex justify-center items-center gap-4 bg-[#f8faeb] dark:bg-slate-900 p-3 rounded-xl border border-green-100 dark:border-slate-700 shadow-sm transition-colors">
+        
+        <div className="flex gap-4">
+          <DataStudioDropdown title="Kecamatan" options={kecOptions} selected={filterKec} onChange={(newSel) => { setFilterKec(newSel); setFilterKel(['ALL']); }} />
+          <DataStudioDropdown title="Kelurahan" options={kelOptions} selected={filterKel} onChange={(newSel) => setFilterKel(newSel)} />
+        </div>
+
+        <div className="w-px h-8 bg-gray-300 dark:bg-slate-600 mx-2"></div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Urutkan:</span>
+          <div className="flex bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded shadow-sm text-xs font-bold overflow-hidden">
+            <button 
+              onClick={() => setSortBy('%')}
+              className={`px-4 py-2 transition-colors ${sortBy === '%' ? 'bg-[#1b75d8] text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
+            >
+              Persentase (%)
+            </button>
+            <button 
+              onClick={() => setSortBy('TK AKTIF')}
+              className={`px-4 py-2 transition-colors ${sortBy === 'TK AKTIF' ? 'bg-[#1b75d8] text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
+            >
+              TK Aktif
+            </button>
+          </div>
+        </div>
+
       </div>
 
       <div className="flex gap-4 flex-1 relative min-h-[500px]">
         <div className="flex-1 absolute inset-y-0 left-0 w-[calc(50%-8px)] bg-[#f8faeb] dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
           <div className="px-4 py-3 bg-[#f8faeb] dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center h-[50px]">
-            <h2 className="font-bold text-[15px] text-black dark:text-white">Top 200 Kepala Lingkungan</h2>
+            {/* 💡 JUDUL TABEL DINAMIS */}
+            <h2 className="font-bold text-[15px] text-black dark:text-white">
+              Top 200 Kepling <span className="text-[#1b75d8] dark:text-blue-400">({sortBy === '%' ? 'Capaian %' : 'TK Aktif Terbanyak'})</span>
+            </h2>
             <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium italic">Klik baris untuk lihat peserta aktif</span>
           </div>
           <div className="overflow-y-auto flex-1 bg-white dark:bg-slate-800">
@@ -311,7 +356,10 @@ export default function KeplingTables({
 
         <div className="flex-1 absolute inset-y-0 right-0 w-[calc(50%-8px)] bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden transition-colors">
           <div className="px-4 py-3 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center h-[50px]">
-            <h2 className="font-bold text-[15px] text-black dark:text-white">Worst 200 Kepala Lingkungan</h2>
+            {/* 💡 JUDUL TABEL DINAMIS */}
+            <h2 className="font-bold text-[15px] text-black dark:text-white">
+              Worst 200 Kepling <span className="text-red-500 dark:text-red-400">({sortBy === '%' ? 'Capaian %' : 'TK Aktif Paling Sedikit'})</span>
+            </h2>
             <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium italic">Klik baris untuk lihat peserta aktif</span>
           </div>
           <div className="overflow-y-auto flex-1 bg-white dark:bg-slate-800">
